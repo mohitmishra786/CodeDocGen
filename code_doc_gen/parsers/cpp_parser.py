@@ -39,15 +39,20 @@ class CppParser(BaseParser):
         # Initialize libclang
         try:
             clang.cindex.Config.set_library_file('/System/Volumes/Data/Library/Developer/CommandLineTools/usr/lib/libclang.dylib')
-        except:
+        except Exception:
             # Try alternative paths
             try:
                 clang.cindex.Config.set_library_file('/usr/local/lib/libclang.dylib')
-            except:
+            except Exception:
                 try:
                     clang.cindex.Config.set_library_file('/usr/lib/libclang.so')
-                except:
-                    pass  # Use system default
+                except Exception:
+                    try:
+                        clang.cindex.Config.set_library_file('/usr/lib/x86_64-linux-gnu/libclang.so')
+                    except Exception:
+                        # If all paths fail, we'll use regex fallback
+                        print("Warning: Could not configure libclang library path. C++ parsing will use regex fallback only.")
+                        pass
     
     def can_parse(self, file_path: Path) -> bool:
         """
