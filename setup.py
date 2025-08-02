@@ -24,7 +24,7 @@ if requirements_path.exists():
 
 setup(
     name="code-doc-gen",
-    version="1.0.3",
+    version="1.0.4",
     author="Mohit Mishra",
     author_email="mohitmishra786687@gmail.com",
     description="Automatic documentation generation for Python and C++ codebases using rule-based analysis and NLTK",
@@ -48,7 +48,12 @@ setup(
         "Topic :: Text Processing :: Linguistic",
     ],
     python_requires=">=3.8",
-    install_requires=requirements,
+    install_requires=[
+        "nltk>=3.8",
+        "pyyaml>=6.0",
+        "pytest>=7.0.0",
+        "typing-extensions>=4.0.0",
+    ],
     extras_require={
         "dev": [
             "pytest>=7.0.0",
@@ -60,6 +65,12 @@ setup(
         "test": [
             "pytest>=7.0.0",
             "pytest-cov>=4.0.0",
+        ],
+        "cpp": [
+            "clang>=6.0.0",
+        ],
+        "all": [
+            "clang>=6.0.0",
         ],
     },
     entry_points={

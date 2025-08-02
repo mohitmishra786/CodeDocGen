@@ -5,13 +5,19 @@ Uses libclang to parse C++ code and extract function signatures,
 parameters, and analyze function bodies.
 """
 
-import clang.cindex
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 from . import BaseParser
 from ..models import Function, Parameter, FunctionBody, Exception, ParsedFile, FunctionType
 from ..config import Config
+
+# Try to import clang, but don't fail if it's not available
+try:
+    import clang.cindex
+    CLANG_AVAILABLE = True
+except ImportError:
+    CLANG_AVAILABLE = False
 
 
 class CppParser(BaseParser):
@@ -25,6 +31,11 @@ class CppParser(BaseParser):
             config: Configuration object
         """
         super().__init__(config)
+        
+        if not CLANG_AVAILABLE:
+            print("Warning: clang package not available. C++ parsing will use regex fallback only.")
+            return
+            
         # Initialize libclang
         try:
             clang.cindex.Config.set_library_file('/System/Volumes/Data/Library/Developer/CommandLineTools/usr/lib/libclang.dylib')
@@ -60,6 +71,10 @@ class CppParser(BaseParser):
         Returns:
             ParsedFile object containing extracted functions
         """
+        if not CLANG_AVAILABLE:
+            # Use regex-based parsing if clang is not available
+            return self._parse_with_regex_fallback(file_path)
+            
         try:
             # Create libclang index
             index = clang.cindex.Index.create()
