@@ -11,7 +11,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from . import generate_docs, generate_cpp_docs, generate_python_docs, generate_java_docs
+from . import generate_docs, generate_cpp_docs, generate_python_docs
 from .scanner import RepositoryScanner
 from .config import Config
 
@@ -47,7 +47,7 @@ def validate_args(args: argparse.Namespace) -> None:
     if not repo_path.is_dir():
         raise ValueError(f"Repository path must be a directory: {repo_path}")
     
-    if args.lang and args.lang not in ['c++', 'python', 'java']:
+    if args.lang and args.lang not in ['c++', 'python']:
         raise ValueError(f"Unsupported language: {args.lang}")
     
     if args.config and not Path(args.config).exists():
@@ -76,7 +76,7 @@ Examples:
   code_doc_gen --repo /path/to/python/repo --lang python --output-dir ./docs
 
   # Use custom configuration
-  code_doc_gen --repo /path/to/repo --lang java --config custom_rules.yaml
+  code_doc_gen --repo /path/to/repo --lang c++ --config custom_rules.yaml
 
   # Process specific files only
   code_doc_gen --repo /path/to/repo --lang python --files src/main.py src/utils.py
@@ -93,7 +93,7 @@ Examples:
     # Optional arguments
     parser.add_argument(
         '--lang',
-        choices=['c++', 'python', 'java'],
+        choices=['c++', 'python'],
         help='Programming language (auto-detect if not specified)'
     )
     

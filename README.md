@@ -5,7 +5,7 @@ A command-line tool and library that automatically generates Doxygen-style comme
 ## Features
 
 - **Rule-based Analysis**: Deterministic documentation generation using AST analysis and pattern matching
-- **Multi-language Support**: C/C++ (using libclang), Python (using ast), Java (using javaparser)
+- **Multi-language Support**: C/C++ (using libclang), Python (using ast)
 - **Smart Inference**: Analyzes function bodies to detect loops, conditionals, exceptions, and operations
 - **NLTK Integration**: Uses natural language processing for humanizing function names and descriptions
 - **Flexible Output**: In-place file modification, diff generation, or new file creation
@@ -17,7 +17,6 @@ A command-line tool and library that automatically generates Doxygen-style comme
 
 - Python 3.8+
 - Clang (for C/C++ parsing)
-- Java (for Java parsing, if using javaparser)
 
 ### Setup
 
@@ -48,7 +47,16 @@ code_doc_gen --repo /path/to/cpp/repo --lang c++ --inplace
 code_doc_gen --repo /path/to/python/repo --lang python --output-dir ./docs
 
 # Use custom configuration
-code_doc_gen --repo /path/to/repo --lang java --config custom_rules.yaml
+code_doc_gen --repo /path/to/repo --lang c++ --config custom_rules.yaml
+
+# Process specific files only
+code_doc_gen --repo /path/to/repo --lang python --files src/main.py src/utils.py
+
+# Show diff without applying changes
+code_doc_gen --repo /path/to/repo --lang c++ --diff
+
+# Enable verbose logging
+code_doc_gen --repo /path/to/repo --lang python --verbose
 ```
 
 ### Library Usage
@@ -61,6 +69,12 @@ results = generate_docs('/path/to/repo', lang='c++')
 
 # Process specific files
 results = generate_docs('/path/to/repo', lang='python', files=['src/main.py'])
+
+# Generate in-place documentation
+generate_docs('/path/to/repo', lang='python', inplace=True)
+
+# Generate to output directory
+generate_docs('/path/to/repo', lang='c++', output_dir='./docs')
 ```
 
 ## Configuration
@@ -98,116 +112,96 @@ rules:
 - Uses libclang for AST parsing
 - Generates Doxygen-style comments
 - Detects function signatures, parameters, return types, and exceptions
+- Supports both .c and .cpp files
 
 ### Python
-- Uses built-in `ast` module
-- Generates docstring-style documentation
-- Analyzes function bodies for behavior inference
-
-### Java
-- Uses javaparser for AST parsing
-- Generates Javadoc-style comments
-- Supports class methods and constructors
-
-## Examples
-
-### Input (C++)
-```cpp
-int add(int a, int b) {
-    return a + b;
-}
-```
-
-### Output
-```cpp
-/**
- * \brief Adds two integers.
- * \param a First integer.
- * \param b Second integer.
- * \return The sum of the two integers.
- */
-int add(int a, int b) {
-    return a + b;
-}
-```
-
-### Input (Python)
-```python
-def validate_email(email):
-    if '@' not in email:
-        raise ValueError("Invalid email")
-    return True
-```
-
-### Output
-```python
-def validate_email(email):
-    """
-    Validates the email address.
-    
-    :param email: The email address to validate.
-    :return: True if valid.
-    :raises ValueError: If email format is invalid.
-    """
-    if '@' not in email:
-        raise ValueError("Invalid email")
-    return True
-```
+- Uses built-in ast module for parsing
+- Generates PEP 257 compliant docstrings
+- Detects function signatures, parameters, return types, and exceptions
+- Supports .py files
 
 ## Project Structure
 
 ```
-code_doc_gen/
-├── __init__.py
-├── main.py              # CLI entrypoint
-├── scanner.py           # Repository scanning
-├── parsers/             # Language-specific parsers
-│   ├── __init__.py
-│   ├── cpp_parser.py
-│   ├── python_parser.py
-│   └── java_parser.py
-├── analyzer.py          # NLTK-based inference
-├── generator.py         # Comment formatting
-├── config.py           # YAML configuration
-└── tests/              # Unit tests
-    ├── __init__.py
-    ├── test_scanner.py
-    ├── test_parsers.py
-    ├── test_analyzer.py
-    └── test_generator.py
+CodeDocGen/
+├── code_doc_gen/
+│   ├── __init__.py          # Main package interface
+│   ├── main.py              # CLI entry point
+│   ├── scanner.py           # Repository scanning
+│   ├── analyzer.py          # NLTK-based analysis
+│   ├── generator.py         # Documentation generation
+│   ├── config.py            # Configuration management
+│   ├── models.py            # Data models
+│   └── parsers/             # Language-specific parsers
+│       ├── __init__.py
+│       ├── cpp_parser.py    # C/C++ parser (libclang)
+│       └── python_parser.py # Python parser (ast)
+├── tests/                   # Unit tests
+├── requirements.txt         # Dependencies
+├── setup.py                # Package setup
+├── README.md               # This file
+└── example.py              # Usage examples
 ```
 
 ## Development
 
 ### Running Tests
+
 ```bash
-pytest tests/
+# Run all tests
+python -m pytest tests/ -v
+
+# Run specific test file
+python -m pytest tests/test_analyzer.py -v
 ```
 
-### Adding New Languages
+### Installing in Development Mode
 
-1. Create a new parser in `parsers/`
-2. Implement the `BaseParser` interface
-3. Add language-specific templates to configuration
-4. Update the main scanner to recognize new file extensions
+```bash
+pip install -e .
+```
 
-## License
+## Roadmap
 
-MIT License - see [LICENSE](LICENSE) file for details.
+### Version 1.1 (Next Release)
+- **Java Support**: Add Java parser using javaparser or regex fallback
+- **Enhanced Templates**: More customization options for documentation styles
+- **Better Error Handling**: Improved error messages and recovery
+- **Performance Optimizations**: Parallel processing improvements
+
+### Version 1.2
+- **JavaScript/TypeScript Support**: Add support for JS/TS files
+- **IDE Integration**: VSCode and IntelliJ plugin support
+- **Batch Processing**: Support for processing multiple repositories
+- **Documentation Quality**: Enhanced analysis for better documentation
+
+### Version 1.3
+- **Go Support**: Add Go language parser
+- **Rust Support**: Add Rust language parser
+- **Web Interface**: Simple web UI for documentation generation
+- **CI/CD Integration**: GitHub Actions and GitLab CI templates
+
+### Future Versions
+- **C# Support**: Add C# language parser
+- **PHP Support**: Add PHP language parser
+- **Ruby Support**: Add Ruby language parser
+- **Advanced Analysis**: More sophisticated code analysis and inference
+- **Documentation Standards**: Support for various documentation standards
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## Roadmap
+## License
 
-- [ ] JavaScript/TypeScript support
-- [ ] Go support
-- [ ] Rust support
-- [ ] Better error handling and recovery
-- [ ] Performance optimizations for large codebases
-- [ ] IDE integration plugins 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- **NLTK**: For natural language processing capabilities
+- **libclang**: For C/C++ AST parsing
+- **Python ast module**: For Python code analysis 

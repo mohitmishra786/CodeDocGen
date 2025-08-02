@@ -13,7 +13,7 @@ from .config import Config
 from .generator import DocumentationGenerator
 
 __version__ = "1.0.0"
-__author__ = "CodeDocGen Team"
+__author__ = "Mohit Mishra"
 __license__ = "MIT"
 
 
@@ -30,7 +30,7 @@ def generate_docs(
     
     Args:
         repo_path: Path to the repository to scan
-        lang: Programming language ('c++', 'python', 'java')
+        lang: Programming language ('c++', 'python')
         files: Specific files to process (if None, processes all files)
         config_path: Path to custom configuration file
         inplace: Whether to modify files in place
@@ -83,16 +83,16 @@ def generate_python_docs(repo_path: Union[str, Path], **kwargs) -> Dict[str, str
     return generate_docs(repo_path, lang="python", **kwargs)
 
 
-def generate_java_docs(repo_path: Union[str, Path], **kwargs) -> Dict[str, str]:
-    """Generate documentation for Java code."""
-    return generate_docs(repo_path, lang="java", **kwargs)
+# Java support will be added in future versions
+# def generate_java_docs(repo_path: Union[str, Path], **kwargs) -> Dict[str, str]:
+#     """Generate documentation for Java code."""
+#     return generate_docs(repo_path, lang="java", **kwargs)
 
 
 __all__ = [
     'generate_docs',
     'generate_cpp_docs',
     'generate_python_docs', 
-    'generate_java_docs',
     'RepositoryScanner',
     'Config',
     'DocumentationGenerator'
