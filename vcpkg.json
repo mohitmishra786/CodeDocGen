@@ -1,0 +1,25 @@
+{
+  "name": "codedocgen",
+  "version": "1.0.0",
+  "description": "Automatic documentation generation for C++ codebases using rule-based analysis",
+  "homepage": "https://github.com/mohitmishra786/CodeDocGen",
+  "documentation": "https://github.com/mohitmishra786/CodeDocGen#readme",
+  "license": "MIT",
+  "supports": "!uwp",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
+  ],
+  "features": {
+    "python-bindings": {
+      "description": "Python bindings for CodeDocGen"
+    }
+  },
+  "default-features": []
+} 
