@@ -403,9 +403,13 @@ class DocumentationGenerator:
                 if re.search(rf'\b{re.escape(func_name)}\s*\(', line):
                     # Insert documentation before the function
                     doc_lines = doc_string.split('\n')
+                    # Insert all docstring lines as a block
                     for doc_line in doc_lines:
                         if doc_line.strip():
                             modified_lines.insert(-1, doc_line + '\n')
+                        elif doc_line == '\n':
+                            modified_lines.insert(-1, '\n')
+                        # Skip empty lines that aren't actual newlines
                     break
             
             i += 1

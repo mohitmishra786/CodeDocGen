@@ -21,14 +21,14 @@ class Config:
                 "param": " * \\param {name} {description}",
                 "return": " * \\return {description}",
                 "throws": " * \\throws {exception} {description}",
-                "detailed": "/**\n * \\brief {description}\n *\n{params}{returns}{throws}\n */"
+                "detailed": "/**\n * \\brief {description}\n{params}{returns}{throws}\n */"
             },
             "python": {
-                "brief": '""" {description} """',
+                "brief": '"""\n    {description}\n"""',
                 "param": "    :param {name}: {description}",
                 "return": "    :return: {description}",
                 "raises": "    :raises {exception}: {description}",
-                "detailed": '"""\n    {description}\n\n{params}{returns}{raises}\n    """'
+                "detailed": '"""\n    {description}\n{params}{returns}{raises}\n"""'
             },
             "java": {
                 "brief": "/**\n * {description}\n */",

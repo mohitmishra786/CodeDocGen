@@ -94,7 +94,10 @@ def demonstrate_library_usage():
     # Example 3: Generate documentation with custom output
     print("\n\n3. Generating documentation to output directory:")
     output_dir = Path("generated_docs")
+    # Generate Python docs
     generate_docs(sample_dir, lang="python", output_dir=output_dir)
+    # Generate C++ docs
+    generate_docs(sample_dir, lang="c++", output_dir=output_dir)
     print(f"Documentation written to: {output_dir}")
     
     # Example 4: Show diff without applying changes

@@ -27,13 +27,16 @@ class CppParser(BaseParser):
         super().__init__(config)
         # Initialize libclang
         try:
-            clang.cindex.Config.set_library_file('/usr/lib/libclang.so')
+            clang.cindex.Config.set_library_file('/System/Volumes/Data/Library/Developer/CommandLineTools/usr/lib/libclang.dylib')
         except:
             # Try alternative paths
             try:
                 clang.cindex.Config.set_library_file('/usr/local/lib/libclang.dylib')
             except:
-                pass  # Use system default
+                try:
+                    clang.cindex.Config.set_library_file('/usr/lib/libclang.so')
+                except:
+                    pass  # Use system default
     
     def can_parse(self, file_path: Path) -> bool:
         """
