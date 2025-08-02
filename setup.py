@@ -24,7 +24,7 @@ if requirements_path.exists():
 
 setup(
     name="code-doc-gen",
-    version="1.0.5",
+    version="1.0.6",
     author="Mohit Mishra",
     author_email="mohitmishra786687@gmail.com",
     description="Automatic documentation generation for Python and C++ codebases using rule-based analysis and NLTK",

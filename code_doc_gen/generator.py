@@ -399,8 +399,9 @@ class DocumentationGenerator:
             
             # Look for function definitions
             for func_name, doc_string in documentation.items():
-                # Simple pattern matching for function definitions
-                if re.search(rf'\b{re.escape(func_name)}\s*\(', line):
+                # Pattern matching for function definitions (not function calls)
+                # Look for 'def function_name(' or 'async def function_name('
+                if re.search(rf'^\s*(?:async\s+)?def\s+{re.escape(func_name)}\s*\(', line):
                     # Insert documentation before the function
                     doc_lines = doc_string.split('\n')
                     # Insert all docstring lines as a block

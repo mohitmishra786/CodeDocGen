@@ -126,9 +126,10 @@ class RepositoryScanner:
             'node_modules', 'bower_components',  # Node.js
             'build', 'dist', 'target',  # Build artifacts
             '.idea', '.vscode',  # IDE files
-            'venv', 'env', '.venv', '.env',  # Virtual environments
+            'venv', 'env', '.venv', '.env', 'codedocgen',  # Virtual environments
             'vendor', 'deps',  # Dependencies
             'tmp', 'temp', 'cache',  # Temporary files
+            'site-packages',  # Python packages
         }
         
         return dir_name in ignore_dirs

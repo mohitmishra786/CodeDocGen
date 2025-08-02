@@ -58,6 +58,33 @@ def compute_average(numbers):
 
 def is_valid_password(password):
     return len(password) >= 8
+
+def process_data(data):
+    # This function calls other functions - these should NOT get comments
+    result = validate_email(data.get('email', ''))
+    user = get_user_info(data.get('user_id'))
+    avg = compute_average(data.get('scores', []))
+    return {
+        'valid': result,
+        'user': user,
+        'average': avg
+    }
+
+def main():
+    # This function also calls other functions
+    data = {
+        'email': 'test@example.com',
+        'user_id': 123,
+        'scores': [85, 90, 78, 92]
+    }
+    
+    # These function calls should NOT get comments
+    result = process_data(data)
+    print(f"Processed: {result}")
+    
+    # Test password validation
+    is_valid = is_valid_password("secure123")
+    print(f"Password valid: {is_valid}")
 """
     python_file.write_text(python_content)
     
