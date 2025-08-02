@@ -134,7 +134,7 @@ Examples:
     parser.add_argument(
         '--version',
         action='version',
-        version='CodeDocGen 1.0.0'
+        version=f'CodeDocGen {__import__("code_doc_gen").__version__}'
     )
     
     args = parser.parse_args()
