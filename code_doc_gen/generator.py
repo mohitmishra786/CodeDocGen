@@ -1,0 +1,468 @@
+"""
+Documentation generator for CodeDocGen.
+
+Formats and generates documentation comments for functions
+in various programming languages.
+"""
+
+import re
+import shutil
+from pathlib import Path
+from typing import List, Dict, Any, Optional
+from difflib import unified_diff
+
+from .models import Function, DocumentationResult
+from .config import Config
+
+
+class DocumentationGenerator:
+    """Generates documentation comments for functions."""
+    
+    def __init__(self, config: Config):
+        """
+        Initialize the documentation generator.
+        
+        Args:
+            config: Configuration object
+        """
+        self.config = config
+    
+    def generate_documentation(
+        self, 
+        functions: List[Function], 
+        lang: str
+    ) -> Dict[str, str]:
+        """
+        Generate documentation for a list of functions.
+        
+        Args:
+            functions: List of functions to document
+            lang: Programming language
+            
+        Returns:
+            Dictionary mapping function names to documentation strings
+        """
+        documentation = {}
+        
+        for function in functions:
+            try:
+                doc_result = self._generate_function_documentation(function, lang)
+                if doc_result:
+                    documentation[function.name] = doc_result.get_full_documentation()
+            except Exception as e:
+                print(f"Error generating documentation for {function.name}: {e}")
+                continue
+        
+        return documentation
+    
+    def _generate_function_documentation(self, function: Function, lang: str) -> Optional[DocumentationResult]:
+        """
+        Generate documentation for a single function.
+        
+        Args:
+            function: Function to document
+            lang: Programming language
+            
+        Returns:
+            DocumentationResult object or None if generation fails
+        """
+        # Generate brief documentation
+        brief_doc = self._generate_brief_documentation(function, lang)
+        
+        # Generate detailed documentation
+        detailed_doc = self._generate_detailed_documentation(function, lang)
+        
+        # Generate parameter documentation
+        param_docs = self._generate_parameter_documentation(function, lang)
+        
+        # Generate return documentation
+        return_doc = self._generate_return_documentation(function, lang)
+        
+        # Generate exception documentation
+        exception_docs = self._generate_exception_documentation(function, lang)
+        
+        return DocumentationResult(
+            function=function,
+            brief_doc=brief_doc,
+            detailed_doc=detailed_doc,
+            param_docs=param_docs,
+            return_doc=return_doc,
+            exception_docs=exception_docs
+        )
+    
+    def _generate_brief_documentation(self, function: Function, lang: str) -> str:
+        """
+        Generate brief documentation for a function.
+        
+        Args:
+            function: Function to document
+            lang: Programming language
+            
+        Returns:
+            Brief documentation string
+        """
+        template = self.config.get_template(lang, "brief")
+        
+        if not template:
+            # Fallback templates
+            if lang == "c++":
+                template = "/**\n * \\brief {description}\n */"
+            elif lang == "python":
+                template = '""" {description} """'
+            elif lang == "java":
+                template = "/**\n * {description}\n */"
+            else:
+                template = "/** {description} */"
+        
+        description = function.brief_description or function.detailed_description or f"Function {function.name}"
+        
+        return template.format(description=description)
+    
+    def _generate_detailed_documentation(self, function: Function, lang: str) -> str:
+        """
+        Generate detailed documentation for a function.
+        
+        Args:
+            function: Function to document
+            lang: Programming language
+            
+        Returns:
+            Detailed documentation string
+        """
+        template = self.config.get_template(lang, "detailed")
+        
+        if not template:
+            # Fallback templates
+            if lang == "c++":
+                template = "/**\n * \\brief {description}\n *\n{params}{returns}{throws}\n */"
+            elif lang == "python":
+                template = '"""\n    {description}\n\n{params}{returns}{raises}\n    """'
+            elif lang == "java":
+                template = "/**\n * {description}\n *\n{params}{returns}{throws}\n */"
+            else:
+                template = "/**\n * {description}\n *\n{params}{returns}{throws}\n */"
+        
+        # Generate parameter documentation
+        params_doc = self._generate_parameter_documentation_text(function, lang)
+        
+        # Generate return documentation
+        returns_doc = self._generate_return_documentation_text(function, lang)
+        
+        # Generate exception documentation
+        throws_doc = self._generate_exception_documentation_text(function, lang)
+        
+        description = function.detailed_description or function.brief_description or f"Function {function.name}"
+        
+        return template.format(
+            description=description,
+            params=params_doc,
+            returns=returns_doc,
+            throws=throws_doc,
+            raises=throws_doc  # For Python compatibility
+        )
+    
+    def _generate_parameter_documentation(self, function: Function, lang: str) -> Dict[str, str]:
+        """
+        Generate parameter documentation for a function.
+        
+        Args:
+            function: Function to document
+            lang: Programming language
+            
+        Returns:
+            Dictionary mapping parameter names to documentation strings
+        """
+        param_docs = {}
+        
+        for parameter in function.parameters:
+            template = self.config.get_template(lang, "param")
+            
+            if not template:
+                # Fallback templates
+                if lang == "c++":
+                    template = " * \\param {name} {description}"
+                elif lang == "python":
+                    template = "    :param {name}: {description}"
+                elif lang == "java":
+                    template = " * @param {name} {description}"
+                else:
+                    template = " * @param {name} {description}"
+            
+            description = parameter.description or f"Parameter {parameter.name}"
+            
+            param_docs[parameter.name] = template.format(
+                name=parameter.name,
+                description=description
+            )
+        
+        return param_docs
+    
+    def _generate_parameter_documentation_text(self, function: Function, lang: str) -> str:
+        """
+        Generate parameter documentation as text.
+        
+        Args:
+            function: Function to document
+            lang: Programming language
+            
+        Returns:
+            Parameter documentation text
+        """
+        param_docs = self._generate_parameter_documentation(function, lang)
+        
+        if not param_docs:
+            return ""
+        
+        # Join parameter documentation with newlines
+        return "\n".join(param_docs.values()) + "\n"
+    
+    def _generate_return_documentation(self, function: Function, lang: str) -> Optional[str]:
+        """
+        Generate return documentation for a function.
+        
+        Args:
+            function: Function to document
+            lang: Programming language
+            
+        Returns:
+            Return documentation string or None
+        """
+        if function.return_type.lower() == "void":
+            return None
+        
+        template = self.config.get_template(lang, "return")
+        
+        if not template:
+            # Fallback templates
+            if lang == "c++":
+                template = " * \\return {description}"
+            elif lang == "python":
+                template = "    :return: {description}"
+            elif lang == "java":
+                template = " * @return {description}"
+            else:
+                template = " * @return {description}"
+        
+        # Generate return description based on type
+        description = self._generate_return_description(function)
+        
+        return template.format(description=description)
+    
+    def _generate_return_documentation_text(self, function: Function, lang: str) -> str:
+        """
+        Generate return documentation as text.
+        
+        Args:
+            function: Function to document
+            lang: Programming language
+            
+        Returns:
+            Return documentation text
+        """
+        return_doc = self._generate_return_documentation(function, lang)
+        
+        if not return_doc:
+            return ""
+        
+        return return_doc + "\n"
+    
+    def _generate_return_description(self, function: Function) -> str:
+        """
+        Generate a description for the return value.
+        
+        Args:
+            function: Function to document
+            
+        Returns:
+            Return description string
+        """
+        return_type = function.return_type.lower()
+        
+        if return_type == "bool":
+            return "True or false"
+        elif return_type in ["int", "integer"]:
+            return "Integer value"
+        elif return_type in ["float", "double"]:
+            return "Floating-point value"
+        elif return_type in ["string", "str"]:
+            return "String value"
+        elif return_type in ["list", "array"]:
+            return "List of values"
+        elif return_type in ["dict", "map"]:
+            return "Dictionary of values"
+        else:
+            return f"Value of type {function.return_type}"
+    
+    def _generate_exception_documentation(self, function: Function, lang: str) -> Dict[str, str]:
+        """
+        Generate exception documentation for a function.
+        
+        Args:
+            function: Function to document
+            lang: Programming language
+            
+        Returns:
+            Dictionary mapping exception names to documentation strings
+        """
+        exception_docs = {}
+        
+        for exception in function.exceptions:
+            template = self.config.get_template(lang, "throws")
+            
+            if not template:
+                # Fallback templates
+                if lang == "c++":
+                    template = " * \\throws {exception} {description}"
+                elif lang == "python":
+                    template = "    :raises {exception}: {description}"
+                elif lang == "java":
+                    template = " * @throws {exception} {description}"
+                else:
+                    template = " * @throws {exception} {description}"
+            
+            description = exception.description or f"Thrown when {exception.name.lower()} occurs"
+            
+            exception_docs[exception.name] = template.format(
+                exception=exception.name,
+                description=description
+            )
+        
+        return exception_docs
+    
+    def _generate_exception_documentation_text(self, function: Function, lang: str) -> str:
+        """
+        Generate exception documentation as text.
+        
+        Args:
+            function: Function to document
+            lang: Programming language
+            
+        Returns:
+            Exception documentation text
+        """
+        exception_docs = self._generate_exception_documentation(function, lang)
+        
+        if not exception_docs:
+            return ""
+        
+        # Join exception documentation with newlines
+        return "\n".join(exception_docs.values()) + "\n"
+    
+    def apply_documentation_inplace(self, file_path: Path, documentation: Dict[str, str]) -> None:
+        """
+        Apply documentation to a file in place.
+        
+        Args:
+            file_path: Path to the file to modify
+            documentation: Dictionary mapping function names to documentation strings
+        """
+        # Create backup
+        backup_path = file_path.with_suffix(file_path.suffix + '.bak')
+        shutil.copy2(file_path, backup_path)
+        
+        try:
+            # Read the original file
+            with open(file_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            # Apply documentation
+            modified_lines = self._insert_documentation(lines, documentation)
+            
+            # Write the modified file
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.writelines(modified_lines)
+            
+            print(f"Applied documentation to {file_path}")
+            
+        except Exception as e:
+            # Restore from backup
+            shutil.copy2(backup_path, file_path)
+            raise e
+    
+    def _insert_documentation(self, lines: List[str], documentation: Dict[str, str]) -> List[str]:
+        """
+        Insert documentation into file lines.
+        
+        Args:
+            lines: Original file lines
+            documentation: Dictionary mapping function names to documentation strings
+            
+        Returns:
+            Modified file lines
+        """
+        modified_lines = []
+        i = 0
+        
+        while i < len(lines):
+            line = lines[i]
+            modified_lines.append(line)
+            
+            # Look for function definitions
+            for func_name, doc_string in documentation.items():
+                # Simple pattern matching for function definitions
+                if re.search(rf'\b{re.escape(func_name)}\s*\(', line):
+                    # Insert documentation before the function
+                    doc_lines = doc_string.split('\n')
+                    for doc_line in doc_lines:
+                        if doc_line.strip():
+                            modified_lines.insert(-1, doc_line + '\n')
+                    break
+            
+            i += 1
+        
+        return modified_lines
+    
+    def write_documentation_to_file(self, output_path: Path, documentation: Dict[str, str]) -> None:
+        """
+        Write documentation to a new file.
+        
+        Args:
+            output_path: Path to the output file
+            documentation: Dictionary mapping function names to documentation strings
+        """
+        # Ensure output directory exists
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write("# Generated Documentation\n\n")
+            
+            for func_name, doc_string in documentation.items():
+                f.write(f"## Function: {func_name}\n\n")
+                f.write("```\n")
+                f.write(doc_string)
+                f.write("\n```\n\n")
+        
+        print(f"Wrote documentation to {output_path}")
+    
+    def generate_diff(self, file_path: Path, documentation: Dict[str, str]) -> str:
+        """
+        Generate a diff showing the documentation changes.
+        
+        Args:
+            file_path: Path to the file
+            documentation: Dictionary mapping function names to documentation strings
+            
+        Returns:
+            Diff string
+        """
+        try:
+            # Read the original file
+            with open(file_path, 'r', encoding='utf-8') as f:
+                original_lines = f.readlines()
+            
+            # Generate modified lines
+            modified_lines = self._insert_documentation(original_lines, documentation)
+            
+            # Generate diff
+            diff = list(unified_diff(
+                original_lines,
+                modified_lines,
+                fromfile=str(file_path),
+                tofile=str(file_path),
+                lineterm=''
+            ))
+            
+            return '\n'.join(diff)
+            
+        except Exception as e:
+            return f"Error generating diff: {e}" 
