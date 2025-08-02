@@ -17,6 +17,17 @@ __author__ = "Mohit Mishra"
 __license__ = "MIT"
 
 
+"""
+    Generates the docs based on repo_path, lang, files, config_path, inplace, output_dir. Function iterates over data, conditionally processes input, has side effects, performs arithmetic operations. Takes repo_path, lang, files, config_path, inplace and output_dir as input. Returns a dict[(str, str)] value.
+    :param repo_path: The repo_path value of type Union[(str, Path)].
+    :param lang: The lang string.
+    :param files: The files value of type Optional[List[str]].
+    :param config_path: The config_path value of type Optional[Union[(str, Path)]].
+    :param inplace: The inplace boolean value.
+    :param output_dir: The output_dir value of type Optional[Union[(str, Path)]].
+    :return: Value of type Dict[(str, str)]
+
+"""
 def generate_docs(
     repo_path: Union[str, Path],
     lang: str = "c++",

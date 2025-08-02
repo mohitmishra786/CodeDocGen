@@ -42,6 +42,14 @@ class PythonParser(BaseParser):
         """
         return file_path.suffix.lower() in ['.py', '.pyx', '.pxd']
     
+    """
+        Performs _set_parents operation. Function iterates over data, has side effects. Takes self, node and parent as input. Returns a object value.
+        :param self: The self object.
+        :param node: The node object.
+        :param parent: The parent object.
+        :return: Value of type object
+
+    """
     def _set_parents(self, node, parent=None):
         for child in ast.iter_child_nodes(node):
             child.parent = parent

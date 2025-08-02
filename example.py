@@ -345,6 +345,12 @@ def demonstrate_cli_usage():
     print("   code_doc_gen --repo /path/to/repo --lang python --verbose")
 
 
+"""
+    Performs print_file_contents operation. Function has side effects, performs file operations. Takes file_path as input. Returns a object value.
+    :param file_path: The file_path object.
+    :return: Value of type object
+
+"""
 def print_file_contents(file_path):
     print(f"\n--- {file_path} ---")
     with open(file_path, "r", encoding="utf-8") as f:
@@ -367,6 +373,11 @@ def demonstrate_existing_documentation_fix():
     
     print("\n✅ Test completed: Existing documentation should be preserved!")
 
+"""
+    Performs demonstrate_inplace_for_all_languages operation. Function has side effects, performs arithmetic operations. Returns a object value.
+    :return: Value of type object
+
+"""
 def demonstrate_inplace_for_all_languages():
     sample_dir = Path("sample_code")
     # In-place for Python

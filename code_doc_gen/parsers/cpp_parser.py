@@ -6,7 +6,7 @@ parameters, and analyze function bodies.
 """
 
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
 
 from . import BaseParser
 from ..models import Function, Parameter, FunctionBody, Exception, ParsedFile, FunctionType
@@ -16,8 +16,22 @@ from ..config import Config
 try:
     import clang.cindex
     CLANG_AVAILABLE = True
+    if TYPE_CHECKING:
+        from clang.cindex import Cursor, Type
 except ImportError:
     CLANG_AVAILABLE = False
+    # Create dummy types for type hints when clang is not available
+    if TYPE_CHECKING:
+        Cursor = Any
+        Type = Any
+
+# Define types for use throughout the module
+if CLANG_AVAILABLE:
+    Cursor = clang.cindex.Cursor
+    Type = clang.cindex.Type
+else:
+    Cursor = Any
+    Type = Any
 
 
 class CppParser(BaseParser):
@@ -104,7 +118,7 @@ class CppParser(BaseParser):
             # Fallback to regex-based parsing for C++
             return self._parse_with_regex_fallback(file_path)
     
-    def _extract_functions(self, cursor: clang.cindex.Cursor, parsed_file: ParsedFile) -> None:
+    def _extract_functions(self, cursor: Cursor, parsed_file: ParsedFile) -> None:
         """
         Extract functions from the AST cursor.
         
@@ -112,6 +126,9 @@ class CppParser(BaseParser):
             cursor: libclang cursor
             parsed_file: ParsedFile object to populate
         """
+        if not CLANG_AVAILABLE:
+            return
+            
         for child in cursor.get_children():
             if child.location.file and str(child.location.file) == parsed_file.file_path:
                 if child.kind == clang.cindex.CursorKind.FUNCTION_DECL:
@@ -137,7 +154,7 @@ class CppParser(BaseParser):
                     # Recursively process class
                     self._extract_functions(child, parsed_file)
     
-    def _parse_function_decl(self, cursor: clang.cindex.Cursor) -> Optional[Function]:
+    def _parse_function_decl(self, cursor: Cursor) -> Optional[Function]:
         """
         Parse a function declaration.
         
@@ -147,6 +164,9 @@ class CppParser(BaseParser):
         Returns:
             Function object or None if parsing fails
         """
+        if not CLANG_AVAILABLE:
+            return None
+            
         try:
             # Get function name
             name = cursor.spelling
@@ -184,7 +204,7 @@ class CppParser(BaseParser):
             print(f"Error parsing function {cursor.spelling}: {e}")
             return None
     
-    def _parse_method_decl(self, cursor: clang.cindex.Cursor) -> Optional[Function]:
+    def _parse_method_decl(self, cursor: Cursor) -> Optional[Function]:
         """
         Parse a method declaration.
         
@@ -194,6 +214,9 @@ class CppParser(BaseParser):
         Returns:
             Function object or None if parsing fails
         """
+        if not CLANG_AVAILABLE:
+            return None
+            
         try:
             # Get method name
             name = cursor.spelling
@@ -235,7 +258,7 @@ class CppParser(BaseParser):
             print(f"Error parsing method {cursor.spelling}: {e}")
             return None
     
-    def _parse_constructor_decl(self, cursor: clang.cindex.Cursor) -> Optional[Function]:
+    def _parse_constructor_decl(self, cursor: Cursor) -> Optional[Function]:
         """
         Parse a constructor declaration.
         
@@ -245,6 +268,9 @@ class CppParser(BaseParser):
         Returns:
             Function object or None if parsing fails
         """
+        if not CLANG_AVAILABLE:
+            return None
+            
         try:
             # Get constructor name (same as class name)
             name = cursor.spelling
@@ -283,7 +309,7 @@ class CppParser(BaseParser):
             print(f"Error parsing constructor {cursor.spelling}: {e}")
             return None
     
-    def _parse_destructor_decl(self, cursor: clang.cindex.Cursor) -> Optional[Function]:
+    def _parse_destructor_decl(self, cursor: Cursor) -> Optional[Function]:
         """
         Parse a destructor declaration.
         
@@ -293,6 +319,9 @@ class CppParser(BaseParser):
         Returns:
             Function object or None if parsing fails
         """
+        if not CLANG_AVAILABLE:
+            return None
+            
         try:
             # Get destructor name
             name = cursor.spelling
@@ -331,7 +360,7 @@ class CppParser(BaseParser):
             print(f"Error parsing destructor {cursor.spelling}: {e}")
             return None
     
-    def _parse_parameters(self, cursor: clang.cindex.Cursor) -> List[Parameter]:
+    def _parse_parameters(self, cursor: Cursor) -> List[Parameter]:
         """
         Parse function parameters.
         
@@ -341,6 +370,9 @@ class CppParser(BaseParser):
         Returns:
             List of Parameter objects
         """
+        if not CLANG_AVAILABLE:
+            return []
+            
         parameters = []
         
         for child in cursor.get_children():
@@ -356,7 +388,7 @@ class CppParser(BaseParser):
         
         return parameters
     
-    def _parse_exceptions(self, cursor: clang.cindex.Cursor) -> List[Exception]:
+    def _parse_exceptions(self, cursor: Cursor) -> List[Exception]:
         """
         Parse exceptions that can be thrown by the function.
         
@@ -366,6 +398,9 @@ class CppParser(BaseParser):
         Returns:
             List of Exception objects
         """
+        if not CLANG_AVAILABLE:
+            return []
+            
         exceptions = []
         
         # This is a simplified implementation
@@ -379,7 +414,7 @@ class CppParser(BaseParser):
         
         return exceptions
     
-    def _find_exceptions_in_body(self, cursor: clang.cindex.Cursor, exceptions: List[Exception]) -> None:
+    def _find_exceptions_in_body(self, cursor: Cursor, exceptions: List[Exception]) -> None:
         """
         Find exceptions in function body.
         
@@ -387,6 +422,9 @@ class CppParser(BaseParser):
             cursor: Function body cursor
             exceptions: List to populate with exceptions
         """
+        if not CLANG_AVAILABLE:
+            return
+            
         for child in cursor.get_children():
             if child.kind == clang.cindex.CursorKind.CALL_EXPR:
                 # Check if this is a throw call
@@ -401,7 +439,7 @@ class CppParser(BaseParser):
             if child.kind == clang.cindex.CursorKind.COMPOUND_STMT:
                 self._find_exceptions_in_body(child, exceptions)
     
-    def _analyze_function_body(self, cursor: clang.cindex.Cursor) -> FunctionBody:
+    def _analyze_function_body(self, cursor: Cursor) -> FunctionBody:
         """
         Analyze the function body for patterns and behaviors.
         
@@ -411,6 +449,9 @@ class CppParser(BaseParser):
         Returns:
             FunctionBody object with analysis results
         """
+        if not CLANG_AVAILABLE:
+            return FunctionBody()
+            
         body = FunctionBody()
         
         # Find the function body (compound statement)
@@ -421,7 +462,7 @@ class CppParser(BaseParser):
         
         return body
     
-    def _analyze_compound_statement(self, cursor: clang.cindex.Cursor, body: FunctionBody) -> None:
+    def _analyze_compound_statement(self, cursor: Cursor, body: FunctionBody) -> None:
         """
         Analyze a compound statement for patterns.
         
@@ -429,6 +470,9 @@ class CppParser(BaseParser):
             cursor: Compound statement cursor
             body: FunctionBody object to update
         """
+        if not CLANG_AVAILABLE:
+            return
+            
         for child in cursor.get_children():
             if child.kind == clang.cindex.CursorKind.FOR_STMT:
                 body.has_loops = True
@@ -460,7 +504,7 @@ class CppParser(BaseParser):
             if child.kind == clang.cindex.CursorKind.COMPOUND_STMT:
                 self._analyze_compound_statement(child, body)
     
-    def _get_type_string(self, type_obj: clang.cindex.Type) -> str:
+    def _get_type_string(self, type_obj: Type) -> str:
         """
         Get a string representation of a type.
         
@@ -470,9 +514,12 @@ class CppParser(BaseParser):
         Returns:
             Type string
         """
+        if not CLANG_AVAILABLE:
+            return type_obj.spelling
+            
         return type_obj.spelling
     
-    def _get_class_name(self, cursor: clang.cindex.Cursor) -> Optional[str]:
+    def _get_class_name(self, cursor: Cursor) -> Optional[str]:
         """
         Get the class name for a method.
         
@@ -482,13 +529,16 @@ class CppParser(BaseParser):
         Returns:
             Class name or None
         """
+        if not CLANG_AVAILABLE:
+            return None
+            
         # Find the parent class
         parent = cursor.semantic_parent
         if parent and parent.kind == clang.cindex.CursorKind.CLASS_DECL:
             return parent.spelling
         return None
     
-    def _get_end_line(self, cursor: clang.cindex.Cursor) -> int:
+    def _get_end_line(self, cursor: Cursor) -> int:
         """
         Get the end line number of the function.
         
@@ -498,6 +548,14 @@ class CppParser(BaseParser):
         Returns:
             End line number
         """
+        if not CLANG_AVAILABLE:
+            # This is a simplified implementation
+            # In a real implementation, you would need to traverse the AST
+            # to find the actual end of the function
+            
+            # For now, we'll use a reasonable estimate
+            return cursor.location.line + 10  # Assume 10 lines for the function
+            
         # This is a simplified implementation
         # In a real implementation, you would need to traverse the AST
         # to find the actual end of the function
@@ -517,6 +575,27 @@ class CppParser(BaseParser):
         """
         import re
         
+        if not CLANG_AVAILABLE:
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    source_code = f.read()
+                
+                parsed_file = ParsedFile(
+                    file_path=str(file_path),
+                    language='c++'
+                )
+                
+                # Extract functions using regex patterns
+                functions = self._extract_functions_regex(source_code)
+                for function in functions:
+                    parsed_file.add_function(function)
+                
+                return parsed_file
+                
+            except Exception as e:
+                print(f"Error in regex fallback for {file_path}: {e}")
+                return ParsedFile(file_path=str(file_path), language='c++')
+            
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 source_code = f.read()
@@ -549,6 +628,39 @@ class CppParser(BaseParser):
         """
         import re
         
+        if not CLANG_AVAILABLE:
+            functions = []
+            
+            # Pattern for function definitions
+            # Matches: return_type function_name(parameters) { body }
+            function_pattern = r'(\w+(?:\s*<[^>]*>)?)\s+(\w+)\s*\(([^)]*)\)\s*\{'
+            
+            matches = re.finditer(function_pattern, source_code)
+            for match in matches:
+                return_type = match.group(1).strip()
+                function_name = match.group(2).strip()
+                params_str = match.group(3).strip()
+                
+                # Parse parameters
+                parameters = []
+                if params_str:
+                    parameters = self._parse_parameters_regex(params_str)
+                
+                # Create function body (simplified)
+                body = FunctionBody()
+                
+                function = Function(
+                    name=function_name,
+                    return_type=return_type,
+                    parameters=parameters,
+                    body=body,
+                    function_type=FunctionType.FUNCTION
+                )
+                
+                functions.append(function)
+            
+            return functions
+            
         functions = []
         
         # Pattern for function definitions
@@ -564,8 +676,7 @@ class CppParser(BaseParser):
             # Parse parameters
             parameters = []
             if params_str:
-                params = self._parse_parameters_regex(params_str)
-                parameters = params
+                parameters = self._parse_parameters_regex(params_str)
             
             # Create function body (simplified)
             body = FunctionBody()
@@ -594,6 +705,43 @@ class CppParser(BaseParser):
         """
         import re
         
+        if not CLANG_AVAILABLE:
+            parameters = []
+            
+            if not params_str.strip():
+                return parameters
+            
+            # Split by comma, but be careful about template types
+            param_parts = []
+            current_param = ""
+            bracket_count = 0
+            
+            for char in params_str:
+                if char == '<':
+                    bracket_count += 1
+                elif char == '>':
+                    bracket_count -= 1
+                elif char == ',' and bracket_count == 0:
+                    param_parts.append(current_param.strip())
+                    current_param = ""
+                    continue
+                
+                current_param += char
+            
+            if current_param.strip():
+                param_parts.append(current_param.strip())
+            
+            for param_part in param_parts:
+                # Extract type and name
+                # Pattern: type name or type& name or type* name
+                param_match = re.search(r'(\w+(?:\s*<[^>]*>)?(?:\s*[&*])?)\s+(\w+)', param_part)
+                if param_match:
+                    param_type = param_match.group(1).strip()
+                    param_name = param_match.group(2).strip()
+                    parameters.append(Parameter(name=param_name, type=param_type))
+            
+            return parameters
+            
         parameters = []
         
         if not params_str.strip():

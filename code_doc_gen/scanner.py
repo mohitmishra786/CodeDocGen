@@ -39,6 +39,16 @@ class RepositoryScanner:
         )
         self.logger = logging.getLogger(__name__)
     
+    """
+        Performs scan_repository operation. Function iterates over data, conditionally processes input, may throw exceptions, may return early, has side effects, performs arithmetic operations. Takes self, repo_path, lang and files as input. Returns a list[path] value.
+        :param self: The self object.
+        :param repo_path: The repo_path value of type Path.
+        :param lang: The lang value of type Optional[str].
+        :param files: The files value of type Optional[List[str]].
+        :return: Value of type List[Path]
+        :raises Call: Thrown when call occurs.
+
+    """
     def scan_repository(
         self, 
         repo_path: Path, 
@@ -174,6 +184,15 @@ class RepositoryScanner:
             self.logger.error(f"Error parsing file {file_path}: {e}")
             return []
     
+    """
+        Parses the files based on self, file_paths, lang, max_workers. Function iterates over data, conditionally processes input, has side effects. Takes self, file_paths, lang and max_workers as input. Returns a dict[(path, list[function])] value.
+        :param self: The self object.
+        :param file_paths: The file_paths value of type List[Path].
+        :param lang: The lang value of type Optional[str].
+        :param max_workers: The max_workers value of type Optional[int].
+        :return: Value of type Dict[(Path, List[Function])]
+
+    """
     def parse_files_parallel(
         self, 
         file_paths: List[Path], 
@@ -227,6 +246,16 @@ class RepositoryScanner:
             self.logger.error(f"Error in worker parsing {file_path}: {e}")
             return []
     
+    """
+        Performs scan_and_parse operation. Function iterates over data, conditionally processes input, may return early, has side effects. Takes self, repo_path, lang, files and parallel as input. Returns a dict[(path, list[function])] value.
+        :param self: The self object.
+        :param repo_path: The repo_path value of type Path.
+        :param lang: The lang value of type Optional[str].
+        :param files: The files value of type Optional[List[str]].
+        :param parallel: The parallel boolean value.
+        :return: Value of type Dict[(Path, List[Function])]
+
+    """
     def scan_and_parse(
         self, 
         repo_path: Path, 

@@ -27,6 +27,14 @@ class DocumentationGenerator:
         """
         self.config = config
     
+    """
+        Generates the documentation based on self, functions, lang. Function iterates over data, conditionally processes input, has side effects. Takes self, functions and lang as input. Returns a dict[(str, str)] value.
+        :param self: The self object.
+        :param functions: The functions value of type List[Function].
+        :param lang: The lang string.
+        :return: Value of type Dict[(str, str)]
+
+    """
     def generate_documentation(
         self, 
         functions: List[Function], 
