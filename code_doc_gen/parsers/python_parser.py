@@ -42,6 +42,11 @@ class PythonParser(BaseParser):
         """
         return file_path.suffix.lower() in ['.py', '.pyx', '.pxd']
     
+    def _set_parents(self, node, parent=None):
+        for child in ast.iter_child_nodes(node):
+            child.parent = parent
+            self._set_parents(child, child)
+
     def parse_file(self, file_path: Path) -> ParsedFile:
         """
         Parse a Python source file and extract functions.
@@ -57,6 +62,7 @@ class PythonParser(BaseParser):
                 source_code = f.read()
             
             tree = ast.parse(source_code)
+            self._set_parents(tree)
             
             parsed_file = ParsedFile(
                 file_path=str(file_path),
@@ -133,8 +139,10 @@ class PythonParser(BaseParser):
         try:
             # Determine function type
             function_type = FunctionType.FUNCTION
+            class_name = None
             if hasattr(node, 'parent') and isinstance(node.parent, ast.ClassDef):
                 function_type = FunctionType.METHOD
+                class_name = node.parent.name
                 if node.name == '__init__':
                     function_type = FunctionType.CONSTRUCTOR
                 elif node.name == '__del__':
@@ -163,6 +171,7 @@ class PythonParser(BaseParser):
                 exceptions=exceptions,
                 body=body,
                 function_type=function_type,
+                class_name=class_name,
                 line_number=line_number,
                 end_line=end_line
             )

@@ -88,6 +88,41 @@ def main():
 """
     python_file.write_text(python_content)
     
+    # Create a sample Python file with class methods
+    class_file = sample_dir / "class_example.py"
+    class_content = """
+class Calculator:
+    def __init__(self, initial_value=0):
+        self.value = initial_value
+    
+    def add(self, x):
+        self.value += x
+        return self.value
+    
+    def subtract(self, x):
+        self.value -= x
+        return self.value
+    
+    def multiply(self, x):
+        self.value *= x
+        return self.value
+    
+    def get_value(self):
+        return self.value
+
+class DataProcessor:
+    def process_data(self, data):
+        # This should NOT get a comment - it's a function call
+        result = self.validate_data(data)
+        return result
+    
+    def validate_data(self, data):
+        if not data:
+            return False
+        return True
+"""
+    class_file.write_text(class_content)
+    
     return sample_dir
 
 
@@ -190,6 +225,10 @@ def demonstrate_inplace_for_all_languages():
     print("=== In-place documentation for Python ===")
     generate_docs(sample_dir, lang="python", inplace=True)
     print_file_contents(sample_dir / "utils.py")
+    
+    # Test class methods
+    print("\n=== In-place documentation for Python Classes ===")
+    print_file_contents(sample_dir / "class_example.py")
 
     # In-place for C++ (also works for .c files)
     print("\n=== In-place documentation for C++ ===")

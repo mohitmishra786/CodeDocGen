@@ -48,7 +48,7 @@ class DocumentationGenerator:
             try:
                 doc_result = self._generate_function_documentation(function, lang)
                 if doc_result:
-                    documentation[function.name] = doc_result.get_full_documentation()
+                    documentation[function.get_full_name()] = doc_result.get_full_documentation()
             except Exception as e:
                 print(f"Error generating documentation for {function.name}: {e}")
                 continue
@@ -382,39 +382,78 @@ class DocumentationGenerator:
     def _insert_documentation(self, lines: List[str], documentation: Dict[str, str]) -> List[str]:
         """
         Insert documentation into file lines.
-        
-        Args:
-            lines: Original file lines
-            documentation: Dictionary mapping function names to documentation strings
-            
-        Returns:
-            Modified file lines
         """
         modified_lines = []
+        processed_functions = set()
         i = 0
         
         while i < len(lines):
             line = lines[i]
+            inserted = False
+            
+            for qualified_name, doc_string in documentation.items():
+                # Split qualified name for class methods
+                if '::' in qualified_name:
+                    class_name, func_name = qualified_name.split('::', 1)
+                    # Match class method definition (Python)
+                    match = re.match(r'^(\s*)def\s+' + re.escape(func_name) + r'\s*\(', line)
+                    # Also try C++ class method
+                    if not match:
+                        match = re.match(r'^(\s*)(?:\w+\s+)*' + re.escape(class_name) + r'::' + re.escape(func_name) + r'\s*\(', line)
+                else:
+                    func_name = qualified_name
+                    # Match Python function definition
+                    match = re.match(r'^(\s*)(?:async\s+)?def\s+' + re.escape(func_name) + r'\s*\(', line)
+                    # Also try C++ function definition
+                    if not match:
+                        match = re.match(r'^(\s*)(?:\w+\s+)*\w+\s+' + re.escape(func_name) + r'\s*\(', line)
+                
+                if match and qualified_name not in processed_functions:
+                    indent = match.group(1) or ''
+                    
+                    # Check if documentation already exists before this function
+                    has_existing_doc = False
+                    if i > 0:
+                        prev_line = lines[i - 1].strip()
+                        # Check if the previous line contains docstring markers for different languages
+                        if (prev_line.startswith('"""') or prev_line.startswith("'''") or 
+                            prev_line.startswith('/**') or prev_line.startswith('/*') or
+                            prev_line.startswith('*') or prev_line.startswith('*/')):
+                            has_existing_doc = True
+                        # Also check if there are multiple docstring lines before
+                        j = i - 1
+                        while j >= 0 and lines[j].strip() and (
+                            lines[j].strip().startswith('"""') or 
+                            lines[j].strip().startswith("'''") or 
+                            lines[j].strip().startswith(':param') or 
+                            lines[j].strip().startswith(':return') or
+                            lines[j].strip().startswith('\\param') or
+                            lines[j].strip().startswith('\\brief') or
+                            lines[j].strip().startswith('\\return') or
+                            lines[j].strip().startswith('\\throws') or
+                            lines[j].strip().startswith('*') or
+                            lines[j].strip().startswith('/**') or
+                            lines[j].strip().startswith('/*') or
+                            lines[j].strip().startswith('*/')
+                        ):
+                            j -= 1
+                        if j < i - 1:  # If we found docstring content before the function
+                            has_existing_doc = True
+                    
+                    if not has_existing_doc:
+                        doc_lines = doc_string.split('\n')
+                        for doc_line in doc_lines:
+                            if doc_line.strip():
+                                modified_lines.append(indent + doc_line + '\n')
+                            elif doc_line == '':
+                                modified_lines.append('\n')
+                        processed_functions.add(qualified_name)
+                        inserted = True
+                        break  # Only insert one docstring per function definition line
+            
             modified_lines.append(line)
-            
-            # Look for function definitions
-            for func_name, doc_string in documentation.items():
-                # Pattern matching for function definitions (not function calls)
-                # Look for 'def function_name(' or 'async def function_name('
-                if re.search(rf'^\s*(?:async\s+)?def\s+{re.escape(func_name)}\s*\(', line):
-                    # Insert documentation before the function
-                    doc_lines = doc_string.split('\n')
-                    # Insert all docstring lines as a block
-                    for doc_line in doc_lines:
-                        if doc_line.strip():
-                            modified_lines.insert(-1, doc_line + '\n')
-                        elif doc_line == '\n':
-                            modified_lines.insert(-1, '\n')
-                        # Skip empty lines that aren't actual newlines
-                    break
-            
             i += 1
-        
+            
         return modified_lines
     
     def write_documentation_to_file(self, output_path: Path, documentation: Dict[str, str]) -> None:
