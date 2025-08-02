@@ -205,11 +205,8 @@ def analyze_github_repo(repo_url: str, output_dir: str = "real_repo_output"):
         return False
 
 class StoryboardManager:
-    """Manages storyboard operations."""
-    
     @staticmethod
     def save_storyboard(storyboard, output_path: str) -> str:
-        """Save storyboard to JSON file."""
         try:
             # Convert storyboard to JSON and save
             import json

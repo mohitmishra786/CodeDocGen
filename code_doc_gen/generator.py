@@ -417,7 +417,10 @@ class DocumentationGenerator:
                     # Check if there's inline documentation on the same line
                     has_inline_doc = self._has_inline_documentation(lines, i)
                     
-                    if existing_doc_start is None and not has_inline_doc:
+                    # Check if there are decorators before this function
+                    has_decorators = self._has_decorators_before(lines, i)
+                    
+                    if existing_doc_start is None and not has_inline_doc and not has_decorators:
                         # No existing documentation, insert new documentation
                         doc_lines = doc_string.split('\n')
                         for doc_line in doc_lines:
@@ -429,8 +432,8 @@ class DocumentationGenerator:
                         inserted = True
                         break  # Only insert one docstring per function definition line
                     else:
-                        # There's existing documentation, skip adding new documentation
-                        # to avoid breaking existing docstrings
+                        # There's existing documentation or decorators, skip adding new documentation
+                        # to avoid breaking existing docstrings or decorators
                         processed_functions.add(qualified_name)
                         inserted = True
                         break
@@ -538,6 +541,53 @@ class DocumentationGenerator:
             next_line = lines[function_line_index + 1].strip()
             if next_line.startswith('"""') or next_line.startswith("'''"):
                 return True
+        
+        return False
+    
+    def _has_decorators_before(self, lines: List[str], function_line_index: int) -> bool:
+        """
+        Check if there are decorators before a function definition.
+        
+        Args:
+            lines: All lines in the file
+            function_line_index: Index of the function definition line
+            
+        Returns:
+            True if there are decorators before the function, False otherwise
+        """
+        if function_line_index <= 0:
+            return False
+        
+        # Look backwards from the function definition
+        i = function_line_index - 1
+        
+        # Skip empty lines
+        while i >= 0 and not lines[i].strip():
+            i -= 1
+        
+        if i < 0:
+            return False
+        
+        # Check if the line before the function is a decorator
+        line = lines[i].strip()
+        
+        # Python decorators start with @
+        if line.startswith('@'):
+            return True
+        
+        # Check for multiple decorators by looking backwards
+        while i >= 0:
+            line = lines[i].strip()
+            
+            # If we hit a non-empty line that's not a decorator, stop
+            if line and not line.startswith('@'):
+                break
+            
+            # If we found a decorator, return True
+            if line.startswith('@'):
+                return True
+            
+            i -= 1
         
         return False
     
