@@ -411,36 +411,14 @@ class DocumentationGenerator:
                 if match and qualified_name not in processed_functions:
                     indent = match.group(1) or ''
                     
-                    # Check if documentation already exists before this function
-                    has_existing_doc = False
-                    if i > 0:
-                        prev_line = lines[i - 1].strip()
-                        # Check if the previous line contains docstring markers for different languages
-                        if (prev_line.startswith('"""') or prev_line.startswith("'''") or 
-                            prev_line.startswith('/**') or prev_line.startswith('/*') or
-                            prev_line.startswith('*') or prev_line.startswith('*/')):
-                            has_existing_doc = True
-                        # Also check if there are multiple docstring lines before
-                        j = i - 1
-                        while j >= 0 and lines[j].strip() and (
-                            lines[j].strip().startswith('"""') or 
-                            lines[j].strip().startswith("'''") or 
-                            lines[j].strip().startswith(':param') or 
-                            lines[j].strip().startswith(':return') or
-                            lines[j].strip().startswith('\\param') or
-                            lines[j].strip().startswith('\\brief') or
-                            lines[j].strip().startswith('\\return') or
-                            lines[j].strip().startswith('\\throws') or
-                            lines[j].strip().startswith('*') or
-                            lines[j].strip().startswith('/**') or
-                            lines[j].strip().startswith('/*') or
-                            lines[j].strip().startswith('*/')
-                        ):
-                            j -= 1
-                        if j < i - 1:  # If we found docstring content before the function
-                            has_existing_doc = True
+                    # Check if there's existing documentation before this function
+                    existing_doc_start = self._find_existing_documentation_start(lines, i)
                     
-                    if not has_existing_doc:
+                    # Check if there's inline documentation on the same line
+                    has_inline_doc = self._has_inline_documentation(lines, i)
+                    
+                    if existing_doc_start is None and not has_inline_doc:
+                        # No existing documentation, insert new documentation
                         doc_lines = doc_string.split('\n')
                         for doc_line in doc_lines:
                             if doc_line.strip():
@@ -450,11 +428,118 @@ class DocumentationGenerator:
                         processed_functions.add(qualified_name)
                         inserted = True
                         break  # Only insert one docstring per function definition line
+                    else:
+                        # There's existing documentation, skip adding new documentation
+                        # to avoid breaking existing docstrings
+                        processed_functions.add(qualified_name)
+                        inserted = True
+                        break
             
             modified_lines.append(line)
             i += 1
             
         return modified_lines
+    
+    def _find_existing_documentation_start(self, lines: List[str], function_line_index: int) -> Optional[int]:
+        """
+        Find the start of existing documentation before a function.
+        
+        Args:
+            lines: All lines in the file
+            function_line_index: Index of the function definition line
+            
+        Returns:
+            Index of the start of existing documentation, or None if no existing documentation
+        """
+        if function_line_index <= 0:
+            return None
+        
+        # Look backwards from the function definition
+        i = function_line_index - 1
+        
+        # Skip empty lines
+        while i >= 0 and not lines[i].strip():
+            i -= 1
+        
+        if i < 0:
+            return None
+        
+        # Check if the line before the function is a docstring or comment
+        line = lines[i].strip()
+        
+        # Python docstrings
+        if (line.startswith('"""') or line.startswith("'''") or 
+            line.endswith('"""') or line.endswith("'''")):
+            return i
+        
+        # C++/Java comments
+        if (line.startswith('/**') or line.startswith('/*') or 
+            line.startswith('*') or line.endswith('*/')):
+            return i
+        
+        # Check for multi-line docstrings by looking backwards
+        if i > 0:
+            # Look for the start of a multi-line docstring
+            j = i
+            while j >= 0:
+                prev_line = lines[j].strip()
+                
+                # Check for docstring markers
+                if (prev_line.startswith('"""') or prev_line.startswith("'''") or
+                    prev_line.startswith('/**') or prev_line.startswith('/*')):
+                    return j
+                
+                # Check for docstring content (param, return, etc.)
+                if (prev_line.startswith(':param') or prev_line.startswith(':return') or
+                    prev_line.startswith('\\param') or prev_line.startswith('\\brief') or
+                    prev_line.startswith('\\return') or prev_line.startswith('\\throws') or
+                    prev_line.startswith('*')):
+                    j -= 1
+                    continue
+                
+                # If we hit a non-empty line that's not docstring content, stop
+                if prev_line and not prev_line.startswith('*'):
+                    break
+                
+                j -= 1
+            
+            # If we found docstring content, return the start
+            if j < i:
+                return j + 1
+        
+        return None
+    
+    def _has_inline_documentation(self, lines: List[str], function_line_index: int) -> bool:
+        """
+        Check if a function has inline documentation (docstring on the same line or immediately after).
+        
+        Args:
+            lines: All lines in the file
+            function_line_index: Index of the function definition line
+            
+        Returns:
+            True if the function has inline documentation, False otherwise
+        """
+        if function_line_index >= len(lines):
+            return False
+        
+        function_line = lines[function_line_index]
+        
+        # Check for inline docstrings in Python on the same line
+        if '"""' in function_line or "'''" in function_line:
+            return True
+        
+        # Check for inline comments in C++ on the same line
+        if '//' in function_line or '/*' in function_line:
+            return True
+        
+        # Check for docstrings immediately after the function definition
+        if function_line_index + 1 < len(lines):
+            next_line = lines[function_line_index + 1].strip()
+            if next_line.startswith('"""') or next_line.startswith("'''"):
+                return True
+        
+        return False
     
     def write_documentation_to_file(self, output_path: Path, documentation: Dict[str, str]) -> None:
         """

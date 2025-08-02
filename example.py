@@ -126,6 +126,114 @@ class DataProcessor:
     return sample_dir
 
 
+def create_sample_files_with_existing_docs():
+    """Create sample files with existing documentation to test the fix."""
+    sample_dir = Path("sample_code")
+    sample_dir.mkdir(exist_ok=True)
+    
+    # Create a Python file with existing docstrings
+    existing_docs_file = sample_dir / "existing_docs.py"
+    existing_docs_content = '''#!/usr/bin/env python3
+"""
+Test Real Repository Animation
+
+This script tests our ManimGL system with real GitHub repositories
+to generate animations from actual code.
+"""
+
+import os
+import sys
+import logging
+from pathlib import Path
+import argparse
+
+# Add current directory to path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Import logging utilities
+from advanced_animation.utils.logging_config import setup_logging_for_run, get_logger
+
+# Setup logging for this run
+logging_manager = setup_logging_for_run("logs", logging.INFO)
+logger = get_logger(__name__)
+
+from advanced_animation import AdvancedAnimationSystem
+from code_analysis import EnhancedCodeAnalyzer
+from repo_fetcher import RepoFetcher
+import tempfile
+import subprocess
+
+def fetch_repository(repo_url: str) -> str:
+    """Wrapper function to fetch a repository."""
+    # Create a temporary directory for the repository
+    temp_dir = tempfile.mkdtemp(prefix="repo_")
+    
+    # Clone the repository using git
+    try:
+        subprocess.run(["git", "clone", repo_url, temp_dir], check=True, capture_output=True)
+        return temp_dir
+    except subprocess.CalledProcessError as e:
+        raise ValueError(f"Failed to clone repository: {e}")
+
+def analyze_repository(repo_path: str):
+    """Wrapper function to analyze a repository."""
+    analyzer = EnhancedCodeAnalyzer(repo_path)
+    return analyzer.analyze_project()
+
+def analyze_github_repo(repo_url: str, output_dir: str = "real_repo_output"):
+    """Analyze a GitHub repository and create animations."""
+    print(f"🎬 Testing Real Repository: {repo_url}")
+    print("=" * 60)
+    
+    try:
+        # Initialize the advanced animation system
+        system = AdvancedAnimationSystem(output_dir=output_dir)
+        
+        # Fetch and analyze the repository
+        print("📥 Fetching repository...")
+        repo_path = fetch_repository(repo_url)
+        print(f"✅ Repository fetched to: {repo_path}")
+        
+        print("\\n🔍 Analyzing repository...")
+        code_analysis = analyze_repository(repo_path)
+        print(f"✅ Analysis complete: {len(code_analysis.get('files', []))} files analyzed")
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error processing repository: {e}")
+        return False
+
+def main():
+    """Main function."""
+    parser = argparse.ArgumentParser(description="Test ManimGL system with real repositories")
+    parser.add_argument("repo_url", help="GitHub repository URL (e.g., https://github.com/user/repo)")
+    parser.add_argument("--output", "-o", default="real_repo_output", 
+                       help="Output directory (default: real_repo_output)")
+    
+    args = parser.parse_args()
+    
+    # Validate repository URL
+    if not args.repo_url.startswith("https://github.com/"):
+        print("❌ Please provide a valid GitHub repository URL")
+        return
+    
+    # Process the repository
+    success = analyze_github_repo(args.repo_url, args.output)
+    
+    if success:
+        print("\\n🎊 Repository animation test completed successfully!")
+    else:
+        print("\\n⚠️ Some issues encountered. Check the logs above.")
+
+if __name__ == "__main__":
+    main()
+'''
+    existing_docs_file.write_text(existing_docs_content)
+    
+    return sample_dir
+
+
 def demonstrate_library_usage():
     """Demonstrate the library usage."""
     print("=== CodeDocGen Library Usage Example ===\n")
@@ -219,6 +327,23 @@ def print_file_contents(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         print(f.read())
 
+def demonstrate_existing_documentation_fix():
+    """Demonstrate that the tool doesn't break existing documentation."""
+    print("\n=== Testing Existing Documentation Preservation ===")
+    
+    # Create sample files with existing documentation
+    sample_dir = create_sample_files_with_existing_docs()
+    
+    # Test in-place documentation generation
+    print("Testing in-place documentation generation on files with existing docs...")
+    generate_docs(sample_dir, lang="python", inplace=True)
+    
+    # Show the results
+    print("\n--- existing_docs.py (after processing) ---")
+    print_file_contents(sample_dir / "existing_docs.py")
+    
+    print("\n✅ Test completed: Existing documentation should be preserved!")
+
 def demonstrate_inplace_for_all_languages():
     sample_dir = Path("sample_code")
     # In-place for Python
@@ -240,11 +365,64 @@ def demonstrate_inplace_for_all_languages():
     # generate_docs(sample_dir, lang="java", inplace=True)
     # print_file_contents(sample_dir / "Example.java")
 
+def demo():
+    """Run the complete demonstration."""
+    print("=== CodeDocGen Library Usage Example ===\n")
+    
+    # Create sample files
+    sample_dir = create_sample_files()
+    
+    # 1. Generate documentation for Python files
+    print("1. Generating documentation for Python files:")
+    result = generate_docs(sample_dir, lang="python")
+    
+    for file_path, functions in result.items():
+        print(f"\nFile: {file_path}\n")
+        for func_name, doc_string in functions.items():
+            print(f"Function: {func_name}")
+            print(doc_string)
+    
+    # 2. Generate documentation for C++ files
+    print("\n2. Generating documentation for C++ files:")
+    result = generate_docs(sample_dir, lang="c++")
+    
+    for file_path, functions in result.items():
+        print(f"\nFile: {file_path}\n")
+        for func_name, doc_string in functions.items():
+            print(f"Function: {func_name}")
+            print(doc_string)
+    
+    # 3. Generate documentation to output directory
+    print("\n3. Generating documentation to output directory:")
+    output_dir = Path("generated_docs")
+    generate_docs(sample_dir, lang="python", output_dir=output_dir)
+    generate_docs(sample_dir, lang="c++", output_dir=output_dir)
+    print(f"Documentation written to: {output_dir}")
+    
+    # 4. Test existing documentation preservation
+    demonstrate_existing_documentation_fix()
+    
+    # 5. Test in-place documentation
+    demonstrate_inplace_for_all_languages()
+    
+    print("\n=== CLI Usage Examples ===")
+    print("To use the command-line interface:")
+    print("1. Generate documentation for a C++ repository:")
+    print("   code_doc_gen --repo /path/to/cpp/repo --lang c++ --inplace")
+    print("2. Generate documentation for Python files with custom output:")
+    print("   code_doc_gen --repo /path/to/python/repo --lang python --output-dir ./docs")
+    print("3. Use custom configuration:")
+    print("   code_doc_gen --repo /path/to/repo --lang java --config custom_rules.yaml")
+    print("4. Process specific files only:")
+    print("   code_doc_gen --repo /path/to/repo --lang python --files src/main.py src/utils.py")
+    print("5. Show diff without applying changes:")
+    print("   code_doc_gen --repo /path/to/repo --lang c++ --diff")
+    print("6. Enable verbose logging:")
+    print("   code_doc_gen --repo /path/to/repo --lang python --verbose")
+
 if __name__ == "__main__":
     try:
-        demonstrate_library_usage()
-        demonstrate_cli_usage()
-        demonstrate_inplace_for_all_languages()
+        demo()
     except Exception as e:
         print(f"Error: {e}")
         print("Make sure you have installed the required dependencies:")
