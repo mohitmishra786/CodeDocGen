@@ -71,7 +71,7 @@ class ParserFactory:
         try:
             from .cpp_parser import CppParser
             self._parsers['c++'] = CppParser(self.config)
-        except ImportError:
+        except (ImportError, NameError):
             print("Warning: C++ parser not available")
         
         try:
