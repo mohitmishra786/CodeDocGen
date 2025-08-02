@@ -204,6 +204,32 @@ def analyze_github_repo(repo_url: str, output_dir: str = "real_repo_output"):
         print(f"❌ Error processing repository: {e}")
         return False
 
+class StoryboardManager:
+    """Manages storyboard operations."""
+    
+    @staticmethod
+    def save_storyboard(storyboard, output_path: str) -> str:
+        """Save storyboard to JSON file."""
+        try:
+            # Convert storyboard to JSON and save
+            import json
+            with open(output_path, 'w') as f:
+                json.dump(storyboard.__dict__, f, indent=2)
+            return output_path
+        except Exception as e:
+            raise IOError(f"Failed to save storyboard: {e}")
+    
+    @staticmethod
+    def load_storyboard(file_path: str):
+        """Load storyboard from JSON file."""
+        try:
+            import json
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+            return data
+        except Exception as e:
+            raise IOError(f"Failed to load storyboard: {e}")
+
 def main():
     """Main function."""
     parser = argparse.ArgumentParser(description="Test ManimGL system with real repositories")
