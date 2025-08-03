@@ -618,7 +618,7 @@ class CppParser(BaseParser):
     
     def _extract_functions_regex(self, source_code: str) -> List[Function]:
         """
-        Extract functions using regex patterns.
+        Extract functions using regex patterns with basic body analysis.
         
         Args:
             source_code: C++ source code
@@ -646,8 +646,8 @@ class CppParser(BaseParser):
                 if params_str:
                     parameters = self._parse_parameters_regex(params_str)
                 
-                # Create function body (simplified)
-                body = FunctionBody()
+                # Extract function body for analysis
+                body = self._analyze_function_body_regex(source_code, match.start())
                 
                 function = Function(
                     name=function_name,
@@ -678,8 +678,8 @@ class CppParser(BaseParser):
             if params_str:
                 parameters = self._parse_parameters_regex(params_str)
             
-            # Create function body (simplified)
-            body = FunctionBody()
+            # Extract function body for analysis
+            body = self._analyze_function_body_regex(source_code, match.start())
             
             function = Function(
                 name=function_name,
@@ -692,6 +692,64 @@ class CppParser(BaseParser):
             functions.append(function)
         
         return functions
+    
+    def _analyze_function_body_regex(self, source_code: str, function_start: int) -> FunctionBody:
+        """
+        Analyze function body using regex patterns for NLTK analysis.
+        
+        Args:
+            source_code: Complete source code
+            function_start: Start position of function definition
+            
+        Returns:
+            FunctionBody object with analysis results
+        """
+        import re
+        
+        if not CLANG_AVAILABLE:
+            body = FunctionBody()
+            
+            # Extract the function body
+            # Find the opening brace and extract everything until matching closing brace
+            brace_count = 0
+            body_start = -1
+            body_end = -1
+            
+            for i in range(function_start, len(source_code)):
+                if source_code[i] == '{':
+                    if brace_count == 0:
+                        body_start = i + 1
+                    brace_count += 1
+                elif source_code[i] == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        body_end = i
+                        break
+            
+            if body_start != -1 and body_end != -1:
+                function_body = source_code[body_start:body_end]
+                
+                # Analyze patterns in the function body
+                body.has_loops = bool(re.search(r'\b(for|while)\s*\(', function_body))
+                body.has_conditionals = bool(re.search(r'\b(if|else|switch)\s*\(', function_body))
+                body.has_arithmetic = bool(re.search(r'[\+\-\*/%]', function_body))
+                body.has_comparisons = bool(re.search(r'[<>!=]=?', function_body))
+                body.has_function_calls = bool(re.search(r'\w+\s*\(', function_body))
+                body.has_returns = bool(re.search(r'\breturn\b', function_body))
+                body.has_exceptions = bool(re.search(r'\b(throw|try|catch)\b', function_body))
+                body.has_side_effects = bool(re.search(r'\b(cout|printf|fprintf|fopen|fclose|new|delete)\b', function_body))
+                body.has_early_returns = len(re.findall(r'\breturn\b', function_body)) > 1
+                
+                # Count complexity
+                body.loop_count = len(re.findall(r'\b(for|while)\s*\(', function_body))
+                body.conditional_count = len(re.findall(r'\b(if|else|switch)\s*\(', function_body))
+                body.function_call_count = len(re.findall(r'\w+\s*\(', function_body))
+                body.return_count = len(re.findall(r'\breturn\b', function_body))
+            
+            return body
+            
+        # If clang is available, this method shouldn't be called
+        return FunctionBody()
     
     def _parse_parameters_regex(self, params_str: str) -> List[Parameter]:
         """
