@@ -1,8 +1,9 @@
 """
-CodeDocGen - Automatic documentation generation for codebases.
+CodeDocGen - Intelligent automatic documentation generation for codebases.
 
-A rule-based tool that generates Doxygen-style comments and documentation
+An AI-powered tool that generates intelligent Doxygen-style comments and documentation
 for functions and methods using AST analysis and NLTK for natural language processing.
+Features context-aware parameter descriptions and function-specific return type analysis.
 """
 
 from typing import Dict, List, Optional, Union
@@ -12,7 +13,7 @@ from .scanner import RepositoryScanner
 from .config import Config
 from .generator import DocumentationGenerator
 
-__version__ = "1.0.17"
+__version__ = "1.0.18"
 __author__ = "Mohit Mishra"
 __license__ = "MIT"
 

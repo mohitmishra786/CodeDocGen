@@ -24,10 +24,10 @@ if requirements_path.exists():
 
 setup(
     name="code_doc_gen",
-    version="1.0.17",
+    version="1.0.18",
     author="Mohit Mishra",
     author_email="mohitmishra786687@gmail.com",
-    description="Automatic documentation generation for Python and C++ codebases using rule-based analysis and NLTK",
+    description="Intelligent automatic documentation generation for Python and C++ codebases using AST analysis and NLTK",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/mohitmishra786/CodeDocGen",
