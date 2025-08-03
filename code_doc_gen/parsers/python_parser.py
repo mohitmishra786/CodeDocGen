@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 from . import BaseParser
-from ..models import Function, Parameter, FunctionBody, Exception, ParsedFile, FunctionType
+from ..models import Function, Parameter, FunctionBody, FunctionException, ParsedFile, FunctionType
 from ..config import Config
 
 
@@ -70,7 +70,6 @@ class PythonParser(BaseParser):
                 source_code = f.read()
             
             tree = ast.parse(source_code)
-            self._set_parents(tree)
             
             parsed_file = ParsedFile(
                 file_path=str(file_path),
@@ -147,14 +146,9 @@ class PythonParser(BaseParser):
         try:
             # Determine function type
             function_type = FunctionType.FUNCTION
-            class_name = None
-            if hasattr(node, 'parent') and isinstance(node.parent, ast.ClassDef):
-                function_type = FunctionType.METHOD
-                class_name = node.parent.name
-                if node.name == '__init__':
-                    function_type = FunctionType.CONSTRUCTOR
-                elif node.name == '__del__':
-                    function_type = FunctionType.DESTRUCTOR
+            class_name = ""
+            # Note: Class detection would require more complex AST traversal
+            # For now, we'll treat all functions as regular functions
             
             # Parse parameters
             parameters = self._parse_parameters(node.args)
@@ -168,9 +162,8 @@ class PythonParser(BaseParser):
             # Analyze function body
             body = self._analyze_function_body(node)
             
-            # Get line numbers
-            line_number = node.lineno
-            end_line = self._get_end_line(node, source_code)
+            # Extract source code for this function
+            function_source = self._extract_function_source(node, source_code)
             
             function = Function(
                 name=node.name,
@@ -180,8 +173,8 @@ class PythonParser(BaseParser):
                 body=body,
                 function_type=function_type,
                 class_name=class_name,
-                line_number=line_number,
-                end_line=end_line
+                ast_node=node,
+                source_code=function_source
             )
             
             return function
@@ -206,12 +199,11 @@ class PythonParser(BaseParser):
         for i, arg in enumerate(args.args):
             param_name = arg.arg
             param_type = self._get_parameter_type(arg)
-            default_value = self._get_default_value(args, i)
             
             parameter = Parameter(
                 name=param_name,
                 type=param_type,
-                default_value=default_value
+                description=""
             )
             parameters.append(parameter)
         
@@ -219,12 +211,11 @@ class PythonParser(BaseParser):
         for i, arg in enumerate(args.kwonlyargs):
             param_name = arg.arg
             param_type = self._get_parameter_type(arg)
-            default_value = self._get_kwonly_default_value(args, i)
             
             parameter = Parameter(
                 name=param_name,
                 type=param_type,
-                default_value=default_value
+                description=""
             )
             parameters.append(parameter)
         
@@ -291,7 +282,7 @@ class PythonParser(BaseParser):
             return self._ast_to_string(node.returns)
         return "object"
     
-    def _parse_exceptions(self, node: ast.FunctionDef) -> List[Exception]:
+    def _parse_exceptions(self, node: ast.FunctionDef) -> List[FunctionException]:
         """
         Parse exceptions that can be raised by the function.
         
@@ -310,7 +301,7 @@ class PythonParser(BaseParser):
                     # Extract exception name from the expression
                     if '.' in exc_name:
                         exc_name = exc_name.split('.')[-1]
-                    exceptions.append(Exception(name=exc_name))
+                    exceptions.append(FunctionException(name=exc_name))
         
         return exceptions
     
@@ -457,4 +448,25 @@ class PythonParser(BaseParser):
                 items.append(f"{key_str}: {value_str}")
             return f"{{{', '.join(items)}}}"
         else:
-            return str(type(node).__name__) 
+            return str(type(node).__name__)
+    
+    def _extract_function_source(self, node: ast.FunctionDef, source_code: str) -> str:
+        """
+        Extract the source code for a specific function.
+        
+        Args:
+            node: Function definition AST node
+            source_code: Original source code
+            
+        Returns:
+            Function source code string
+        """
+        # Extract from original source for compatibility
+        lines = source_code.split('\n')
+        start_line = node.lineno - 1  # Convert to 0-based index
+        end_line = self._get_end_line(node, source_code) - 1
+        
+        if start_line < len(lines) and end_line < len(lines):
+            return '\n'.join(lines[start_line:end_line + 1])
+        else:
+            return "" 

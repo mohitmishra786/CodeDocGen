@@ -12,7 +12,7 @@ from typing import List, Dict, Any, Optional
 from multiprocessing import Pool, cpu_count
 
 from .parsers import ParserFactory
-from .analyzer import NLTKAnalyzer
+from .analyzer import IntelligentAnalyzer
 from .models import Function, ParsedFile
 from .config import Config
 
@@ -29,7 +29,7 @@ class RepositoryScanner:
         """
         self.config = config
         self.parser_factory = ParserFactory(config)
-        self.analyzer = NLTKAnalyzer(config)
+        self.analyzer = IntelligentAnalyzer(config)
         
         # Set up logging
         logging_config = config.get_logging_config()

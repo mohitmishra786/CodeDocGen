@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional, TYPE_CHECKING
 
 from . import BaseParser
-from ..models import Function, Parameter, FunctionBody, Exception, ParsedFile, FunctionType
+from ..models import Function, Parameter, FunctionBody, FunctionException, ParsedFile, FunctionType
 from ..config import Config
 
 # Try to import clang, but don't fail if it's not available
@@ -52,21 +52,24 @@ class CppParser(BaseParser):
             
         # Initialize libclang
         try:
-            clang.cindex.Config.set_library_file('/System/Volumes/Data/Library/Developer/CommandLineTools/usr/lib/libclang.dylib')
+            clang.cindex.Config.set_library_file('/Library/Developer/CommandLineTools/usr/lib/libclang.dylib')
         except Exception:
             # Try alternative paths
             try:
-                clang.cindex.Config.set_library_file('/usr/local/lib/libclang.dylib')
+                clang.cindex.Config.set_library_file('/System/Volumes/Data/Library/Developer/CommandLineTools/usr/lib/libclang.dylib')
             except Exception:
                 try:
-                    clang.cindex.Config.set_library_file('/usr/lib/libclang.so')
+                    clang.cindex.Config.set_library_file('/usr/local/lib/libclang.dylib')
                 except Exception:
                     try:
-                        clang.cindex.Config.set_library_file('/usr/lib/x86_64-linux-gnu/libclang.so')
+                        clang.cindex.Config.set_library_file('/usr/lib/libclang.so')
                     except Exception:
-                        # If all paths fail, we'll use regex fallback
-                        print("Warning: Could not configure libclang library path. C++ parsing will use regex fallback only.")
-                        pass
+                        try:
+                            clang.cindex.Config.set_library_file('/usr/lib/x86_64-linux-gnu/libclang.so')
+                        except Exception:
+                            # If all paths fail, we'll use regex fallback
+                            print("Warning: Could not configure libclang library path. C++ parsing will use regex fallback only.")
+                            pass
     
     def can_parse(self, file_path: Path) -> bool:
         """
@@ -114,7 +117,7 @@ class CppParser(BaseParser):
             
             return parsed_file
             
-        except:
+        except Exception as e:
             # Fallback to regex-based parsing for C++
             return self._parse_with_regex_fallback(file_path)
     
@@ -183,9 +186,8 @@ class CppParser(BaseParser):
             # Analyze function body
             body = self._analyze_function_body(cursor)
             
-            # Get line numbers
-            line_number = cursor.location.line
-            end_line = self._get_end_line(cursor)
+            # Get source code for AST analysis
+            source_code = self._extract_function_source(cursor)
             
             function = Function(
                 name=name,
@@ -194,8 +196,7 @@ class CppParser(BaseParser):
                 exceptions=exceptions,
                 body=body,
                 function_type=FunctionType.FUNCTION,
-                line_number=line_number,
-                end_line=end_line
+                source_code=source_code
             )
             
             return function
@@ -236,9 +237,8 @@ class CppParser(BaseParser):
             # Analyze function body
             body = self._analyze_function_body(cursor)
             
-            # Get line numbers
-            line_number = cursor.location.line
-            end_line = self._get_end_line(cursor)
+            # Get source code for AST analysis
+            source_code = self._extract_function_source(cursor)
             
             function = Function(
                 name=name,
@@ -248,8 +248,7 @@ class CppParser(BaseParser):
                 body=body,
                 function_type=FunctionType.METHOD,
                 class_name=class_name,
-                line_number=line_number,
-                end_line=end_line
+                source_code=source_code
             )
             
             return function
@@ -388,7 +387,7 @@ class CppParser(BaseParser):
         
         return parameters
     
-    def _parse_exceptions(self, cursor: Cursor) -> List[Exception]:
+    def _parse_exceptions(self, cursor: Cursor) -> List[FunctionException]:
         """
         Parse exceptions that can be thrown by the function.
         
@@ -414,7 +413,7 @@ class CppParser(BaseParser):
         
         return exceptions
     
-    def _find_exceptions_in_body(self, cursor: Cursor, exceptions: List[Exception]) -> None:
+    def _find_exceptions_in_body(self, cursor: Cursor, exceptions: List[FunctionException]) -> None:
         """
         Find exceptions in function body.
         
@@ -457,12 +456,12 @@ class CppParser(BaseParser):
         # Find the function body (compound statement)
         for child in cursor.get_children():
             if child.kind == clang.cindex.CursorKind.COMPOUND_STMT:
-                self._analyze_compound_statement(child, body)
+                self._analyze_compound_statement(child, body, cursor.spelling)
                 break
         
         return body
     
-    def _analyze_compound_statement(self, cursor: Cursor, body: FunctionBody) -> None:
+    def _analyze_compound_statement(self, cursor: Cursor, body: FunctionBody, function_name: str = "") -> None:
         """
         Analyze a compound statement for patterns.
         
@@ -476,33 +475,54 @@ class CppParser(BaseParser):
         for child in cursor.get_children():
             if child.kind == clang.cindex.CursorKind.FOR_STMT:
                 body.has_loops = True
+                # Recursively analyze the for loop body
+                self._analyze_compound_statement(child, body, function_name)
             elif child.kind == clang.cindex.CursorKind.WHILE_STMT:
                 body.has_loops = True
+                # Recursively analyze the while loop body
+                self._analyze_compound_statement(child, body, function_name)
             elif child.kind == clang.cindex.CursorKind.DO_STMT:
                 body.has_loops = True
+                # Recursively analyze the do-while loop body
+                self._analyze_compound_statement(child, body, function_name)
             elif child.kind == clang.cindex.CursorKind.IF_STMT:
                 body.has_conditionals = True
+                # Recursively analyze the if statement body
+                self._analyze_compound_statement(child, body, function_name)
             elif child.kind == clang.cindex.CursorKind.SWITCH_STMT:
                 body.has_conditionals = True
+                # Recursively analyze the switch statement body
+                self._analyze_compound_statement(child, body, function_name)
             elif child.kind == clang.cindex.CursorKind.RETURN_STMT:
                 body.has_returns = True
+                # Recursively analyze the return statement to find function calls
+                self._analyze_compound_statement(child, body, function_name)
             elif child.kind == clang.cindex.CursorKind.BINARY_OPERATOR:
                 # Check for arithmetic operations
                 op = child.spelling
                 if op in ['+', '-', '*', '/', '%', '<<', '>>', '&', '|', '^']:
                     body.has_arithmetic = True
+                # Recursively analyze binary operators to find function calls
+                self._analyze_compound_statement(child, body, function_name)
             elif child.kind == clang.cindex.CursorKind.CALL_EXPR:
                 body.has_side_effects = True
                 # Check for specific function calls
                 func_name = child.spelling
-                if func_name in ['printf', 'cout', 'cerr', 'fprintf']:
+                if func_name in ['printf', 'cout', 'cerr', 'fprintf', 'cin', 'scanf']:
                     body.has_string_operations = True
-                elif func_name in ['fopen', 'fclose', 'fread', 'fwrite']:
+                elif func_name in ['fopen', 'fclose', 'fread', 'fwrite', 'remove', 'rename']:
                     body.has_file_operations = True
+                elif func_name in ['malloc', 'free', 'new', 'delete', 'vector', 'map', 'set', 'list']:
+                    body.has_collections = True
+                elif func_name in ['regex_match', 'regex_search', 'regex_replace']:
+                    body.has_regex = True
+                # Check for recursion
+                if func_name == function_name:
+                    body.has_recursion = True
             
             # Recursively analyze nested compound statements
             if child.kind == clang.cindex.CursorKind.COMPOUND_STMT:
-                self._analyze_compound_statement(child, body)
+                self._analyze_compound_statement(child, body, function_name)
     
     def _get_type_string(self, type_obj: Type) -> str:
         """
@@ -562,6 +582,40 @@ class CppParser(BaseParser):
         
         # For now, we'll use a reasonable estimate
         return cursor.location.line + 10  # Assume 10 lines for the function
+    
+    def _extract_function_source(self, cursor: Cursor) -> str:
+        """
+        Extract the source code for a function from the cursor.
+        
+        Args:
+            cursor: Function cursor
+            
+        Returns:
+            Function source code as string
+        """
+        if not CLANG_AVAILABLE:
+            return ""
+            
+        try:
+            # Get the file content
+            file_path = cursor.location.file
+            if not file_path:
+                return ""
+                
+            with open(str(file_path), 'r', encoding='utf-8') as f:
+                source_lines = f.readlines()
+            
+            # Get start and end lines
+            start_line = cursor.location.line - 1  # 0-indexed
+            end_line = self._get_end_line(cursor) - 1  # 0-indexed
+            
+            # Extract the function source
+            function_lines = source_lines[start_line:end_line + 1]
+            return ''.join(function_lines)
+            
+        except Exception as e:
+            print(f"Error extracting function source: {e}")
+            return ""
     
     def _parse_with_regex_fallback(self, file_path: Path) -> ParsedFile:
         """
@@ -647,7 +701,7 @@ class CppParser(BaseParser):
                     parameters = self._parse_parameters_regex(params_str)
                 
                 # Extract function body for analysis
-                body = self._analyze_function_body_regex(source_code, match.start())
+                body = self._analyze_function_body_regex(source_code, match.start(), function_name)
                 
                 function = Function(
                     name=function_name,
@@ -693,7 +747,7 @@ class CppParser(BaseParser):
         
         return functions
     
-    def _analyze_function_body_regex(self, source_code: str, function_start: int) -> FunctionBody:
+    def _analyze_function_body_regex(self, source_code: str, function_start: int, function_name: str) -> FunctionBody:
         """
         Analyze function body using regex patterns for NLTK analysis.
         
@@ -739,6 +793,14 @@ class CppParser(BaseParser):
                 body.has_exceptions = bool(re.search(r'\b(throw|try|catch)\b', function_body))
                 body.has_side_effects = bool(re.search(r'\b(cout|printf|fprintf|fopen|fclose|new|delete)\b', function_body))
                 body.has_early_returns = len(re.findall(r'\breturn\b', function_body)) > 1
+                
+                # Enhanced pattern detection for intelligent analysis
+                body.has_recursion = bool(re.search(rf'\b{re.escape(function_name)}\s*\(', function_body))
+                body.has_regex = bool(re.search(r'\b(regex_match|regex_search|regex_replace)\b', function_body))
+                body.has_api_calls = bool(re.search(r'\b(cout|cin|printf|scanf|fopen|fclose|fread|fwrite)\b', function_body))
+                body.has_file_operations = bool(re.search(r'\b(fopen|fclose|fread|fwrite|remove|rename)\b', function_body))
+                body.has_collections = bool(re.search(r'\b(vector|map|set|list|array|deque|queue|stack)\b', function_body))
+                body.has_string_operations = bool(re.search(r'\b(cout|cin|printf|scanf|string|strlen|strcpy|strcat)\b', function_body))
                 
                 # Count complexity
                 body.loop_count = len(re.findall(r'\b(for|while)\s*\(', function_body))
