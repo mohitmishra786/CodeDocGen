@@ -13,7 +13,7 @@ from .scanner import RepositoryScanner
 from .config import Config
 from .generator import DocumentationGenerator
 
-__version__ = "1.0.18"
+__version__ = "1.1.0"
 __author__ = "Mohit Mishra"
 __license__ = "MIT"
 
