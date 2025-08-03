@@ -4,10 +4,11 @@ A command-line tool and library that automatically generates Doxygen-style comme
 
 ## Features
 
-- **Rule-based Analysis**: Deterministic documentation generation using AST analysis and pattern matching
+- **Intelligent Comment Generation**: AST analysis and NLTK-powered documentation with context-aware descriptions
 - **Multi-language Support**: C/C++ (using libclang), Python (using ast), Java (basic support)
-- **Smart Inference**: Analyzes function bodies to detect loops, conditionals, exceptions, and operations
-- **NLTK Integration**: Uses natural language processing for humanizing function names and descriptions
+- **Smart Function Analysis**: Analyzes function bodies to detect recursion, loops, conditionals, regex usage, API calls, and file operations
+- **NLTK Integration**: Uses natural language processing for intelligent parameter and return type descriptions
+- **Context-Aware Descriptions**: Generates specific, meaningful descriptions instead of generic templates
 - **Flexible Output**: In-place file modification, diff generation, or new file creation
 - **Configurable**: YAML-based configuration for custom rules and templates
 - **Language-Aware Comment Detection**: Prevents duplicate documentation by detecting existing comments
@@ -38,12 +39,12 @@ A command-line tool and library that automatically generates Doxygen-style comme
 
 ### From TestPyPI (Latest Version)
 ```bash
-pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.0.16
+pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.0
 ```
 
 ### From PyPI (Stable Version)
 ```bash
-pip install code_doc_gen
+pip install code-doc-gen==1.1.0
 ```
 
 ## Usage
@@ -142,9 +143,20 @@ rules:
 - Fallback to regex-based parsing when javaparser is not available
 - Supports .java files
 
-## Language-Aware Comment Detection
+## Intelligent Comment Generation
 
-CodeDocGen v1.0.16 introduces intelligent comment detection that prevents duplicate documentation:
+CodeDocGen v1.1.0 introduces intelligent comment generation with AST analysis and NLTK-powered descriptions:
+
+### Key Improvements
+- **Context-Aware Parameter Descriptions**: Smart parameter descriptions based on names and context
+- **Function-Specific Return Types**: Intelligent return type descriptions based on function purpose
+- **Behavioral Detection**: Detects recursion, loops, conditionals, regex usage, API calls, and file operations
+- **Specific Actions**: Generates specific action verbs instead of generic "processes" descriptions
+- **Complete Coverage**: All functions receive intelligent, meaningful comments
+
+### Language-Aware Comment Detection
+
+CodeDocGen v1.1.0 maintains intelligent comment detection that prevents duplicate documentation:
 
 ### Python Comment Detection
 ```python
@@ -243,19 +255,26 @@ pip install -e .
 
 ## Roadmap
 
-### Version 1.1 (Next Release)
+### Version 1.1 (Current Release)
+- **Intelligent Comment Generation**: AST analysis and NLTK-powered documentation
+- **Context-Aware Descriptions**: Smart parameter and return type descriptions
+- **Behavioral Detection**: Recursion, loops, conditionals, regex, API calls, file operations
+- **Specific Actions**: Meaningful action verbs instead of generic descriptions
+- **Complete Coverage**: All functions receive intelligent comments
+
+### Version 1.2 (Next Release)
 - **Enhanced Java Support**: Full javaparser integration for better Java parsing
 - **JavaScript/TypeScript Support**: Add support for JS/TS files
 - **Enhanced Templates**: More customization options for documentation styles
 - **Performance Optimizations**: Parallel processing improvements
 
-### Version 1.2
+### Version 1.3
 - **Go and Rust Support**: Add support for Go and Rust files
 - **IDE Integration**: VSCode and IntelliJ plugin support
 - **Batch Processing**: Support for processing multiple repositories
 - **Documentation Quality**: Enhanced analysis for better documentation
 
-### Version 1.3
+### Version 1.4
 - **C# Support**: Add C# language parser
 - **PHP Support**: Add PHP language parser
 - **Web Interface**: Simple web UI for documentation generation

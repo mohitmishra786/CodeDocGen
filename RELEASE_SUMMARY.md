@@ -1,42 +1,44 @@
-# CodeDocGen v1.0.16 Release Summary
+# CodeDocGen v1.1.0 Release Summary
 
 ## Release Information
-- **Version**: 1.0.16
+- **Version**: 1.1.0
 - **Release Date**: August 3, 2025
-- **Status**: Released
-- **GitHub Tag**: v1.0.16
-- **PyPI Package**: code_doc_gen
-- **TestPyPI**: https://test.pypi.org/project/code_doc_gen/1.0.16/
+- **Status**: Released (First PyPI Production Release)
+- **GitHub Tag**: v1.1.0
+- **PyPI Package**: code-doc-gen
+- **PyPI**: https://pypi.org/project/code-doc-gen/1.1.0/
+- **TestPyPI**: https://test.pypi.org/project/code_doc_gen/1.1.0/
 
-## What's New in v1.0.16
+## What's New in v1.1.0
 
-### 🎯 Language-Aware Comment Detection
-- **Automatic Language Inference**: Detects programming language from file extensions
-- **Python Comment Detection**: Recognizes `#`, `"""`, `'''`, decorators, and comment blocks
-- **C++ Comment Detection**: Recognizes `//`, `/* */`, `/** */`, and contiguous comment blocks
-- **Java Comment Detection**: Recognizes `/**`, `/*`, `*` with `@param`, `@return`, `@throws`
-- **Smart Comment Attribution**: Prevents duplicate documentation by correctly attributing comments to functions
+### 🎯 Intelligent Comment Generation
+- **AST Analysis Integration**: Deep code analysis using Python's ast module and libclang for C++
+- **NLTK-Powered Descriptions**: Advanced natural language processing for intelligent descriptions
+- **Context-Aware Parameter Descriptions**: Smart parameter descriptions based on names and context
+- **Function-Specific Return Types**: Intelligent return type descriptions based on function purpose
+- **Behavioral Detection**: Detects recursion, loops, conditionals, regex usage, API calls, and file operations
 
 ### 🔧 Enhanced Functionality
-- **Decorator Handling**: Properly handles Python decorators while preserving comment detection
-- **Comment Block Detection**: Recognizes multi-line comment blocks above functions
-- **Inline Comment Support**: Detects comments on the same line or next line after function declarations
-- **Edge Case Handling**: Manages comments between functions, empty comment blocks, and mixed content
+- **Specific Actions**: Generates specific action verbs instead of generic "processes" descriptions
+- **Complete Coverage**: All functions receive intelligent, meaningful comments
+- **Enhanced C++ Parser**: Deep AST traversal with libclang for better recursion detection
+- **Python AST Analyzer**: New dedicated AST analyzer for detailed code analysis
+- **Fixed Wordnet Issues**: Resolved incorrect synonym associations for parameter names
 
-### 🧪 Comprehensive Testing
-- **50 New Tests**: Extensive test suite covering all comment detection scenarios
-- **Language Inference Tests**: Verify correct language detection from file extensions
-- **Edge Case Tests**: Handle mixed content, unknown languages, and boundary conditions
-- **Integration Tests**: Verify end-to-end functionality with real code examples
+### 🧪 Quality Assurance
+- **Comprehensive Testing**: All features tested with extensive examples
+- **Edge Case Handling**: Robust handling of complex code patterns
+- **Performance Optimized**: Efficient AST traversal and analysis
+- **Production Ready**: First PyPI release with intelligent features
 
 ## What's Included
 
 ### Core Features
-- **Python Documentation Generation**: PEP 257 compliant docstrings using ast module
-- **C++ Documentation Generation**: Doxygen-style comments using libclang
-- **NLTK Integration**: Natural language processing for humanizing function names
-- **Rule-based Analysis**: Deterministic documentation generation without AI/ML
-- **AST Analysis**: Function body analysis for detecting loops, conditionals, exceptions
+- **Python Documentation Generation**: PEP 257 compliant docstrings using ast module with intelligent analysis
+- **C++ Documentation Generation**: Doxygen-style comments using libclang with deep AST traversal
+- **NLTK Integration**: Advanced natural language processing for intelligent descriptions
+- **AST Analysis**: Comprehensive function body analysis for detecting recursion, loops, conditionals, regex, API calls, file operations
+- **Intelligent Comment Generation**: Context-aware parameter and return type descriptions
 - **Language-Aware Comment Detection**: Prevents duplicate documentation
 
 ### Interfaces
@@ -51,14 +53,14 @@
 
 ## Installation
 
-### From TestPyPI (Latest)
+### From PyPI (Production)
 ```bash
-pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.0.16
+pip install code-doc-gen==1.1.0
 ```
 
-### From PyPI (Stable)
+### From TestPyPI (Latest)
 ```bash
-pip install code-doc-gen
+pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.0
 ```
 
 ### From Source
@@ -92,28 +94,38 @@ results = generate_docs('/path/to/repo', inplace=True)
 ## Supported Languages
 
 ### Python (.py files)
-- Uses built-in ast module
-- Generates PEP 257 compliant docstrings
+- Uses built-in ast module with intelligent analysis
+- Generates PEP 257 compliant docstrings with context-aware descriptions
 - Detects function signatures, parameters, return types, exceptions
-- **NEW**: Recognizes existing comments and docstrings to prevent duplicates
+- **NEW**: Intelligent parameter and return type descriptions
+- **NEW**: Behavioral detection (recursion, loops, conditionals, regex, API calls)
 - Example output:
   ```python
-  # Existing comment above function
-  @decorator
-  def commented_func():
-      """This function has a docstring"""
-      return True
+  """
+      Adds the numbers by performing mathematical operations and returning computed result Takes a and b as input. Returns the sum of the input numbers.
+      :param a: The a parameter.
+      :param b: The second number of type int.
+      :return: Integer value
+  """
+  def add_numbers(a: int, b: int) -> int:
+      return a + b
   ```
 
 ### C++ (.c, .cpp, .h, .hpp files)
-- Uses libclang for AST parsing
-- Generates Doxygen-style comments
+- Uses libclang for AST parsing with deep traversal
+- Generates Doxygen-style comments with intelligent descriptions
 - Detects function signatures, parameters, return types, exceptions
-- **NEW**: Recognizes existing comments to prevent duplicates
+- **NEW**: Enhanced recursion detection and behavioral analysis
+- **NEW**: Context-aware parameter and return type descriptions
 - Example output:
   ```cpp
-  // Existing comment above function
-  int add(int a, int b) {
+  /**
+   * \brief Adds the numbers Takes a and b as input. Returns the sum of the input numbers.
+   * \param a The a parameter.
+   * \param b The second number of type int.
+   * \return Integer value
+   */
+  int add_numbers(int a, int b) {
       return a + b;
   }
   ```
@@ -124,11 +136,12 @@ results = generate_docs('/path/to/repo', inplace=True)
 - Fallback to regex-based parsing when javaparser is not available
 
 ## Quality Assurance
-- **Tests**: 76/76 tests passing (50 new tests added)
-- **Code Coverage**: All core functionality tested
+- **Comprehensive Testing**: All intelligent features tested with extensive examples
+- **Code Coverage**: All core functionality tested with AST analysis
 - **Error Handling**: Robust error handling with graceful fallbacks
 - **Documentation**: Comprehensive README and inline documentation
-- **Language Detection**: 100% accuracy for supported file extensions
+- **Performance**: Efficient AST traversal and analysis
+- **Production Ready**: First PyPI release with intelligent features
 
 ## Dependencies
 - Python 3.8+
@@ -139,13 +152,13 @@ results = generate_docs('/path/to/repo', inplace=True)
 
 ## What's Next
 
-### Version 1.1 (Planned)
+### Version 1.2 (Planned)
 - Enhanced Java support with full javaparser integration
 - JavaScript/TypeScript support
 - Enhanced templates and customization
 - Performance optimizations
 
-### Version 1.2 (Planned)
+### Version 1.3 (Planned)
 - Go and Rust support
 - IDE integration (VSCode, IntelliJ)
 - Batch processing improvements
@@ -158,10 +171,11 @@ results = generate_docs('/path/to/repo', inplace=True)
 - **Documentation**: https://github.com/mohitmishra786/CodeDocGen#readme
 
 ## Release Files
-- **Source Distribution**: `code_doc_gen-1.0.16.tar.gz`
-- **Wheel Distribution**: `code_doc_gen-1.0.16-py3-none-any.whl`
-- **GitHub Release**: https://github.com/mohitmishra786/CodeDocGen/releases/tag/v1.0.16
-- **TestPyPI**: https://test.pypi.org/project/code_doc_gen/1.0.16/
+- **Source Distribution**: `code_doc_gen-1.1.0.tar.gz`
+- **Wheel Distribution**: `code_doc_gen-1.1.0-py3-none-any.whl`
+- **GitHub Release**: https://github.com/mohitmishra786/CodeDocGen/releases/tag/v1.1.0
+- **PyPI**: https://pypi.org/project/code-doc-gen/1.1.0/
+- **TestPyPI**: https://test.pypi.org/project/code_doc_gen/1.1.0/
 
 ## Support
 - **Issues**: https://github.com/mohitmishra786/CodeDocGen/issues
@@ -170,4 +184,4 @@ results = generate_docs('/path/to/repo', inplace=True)
 
 ---
 
-**CodeDocGen v1.0.16 is now available with advanced language-aware comment detection!** 
+**CodeDocGen v1.1.0 is now available with intelligent comment generation powered by AST analysis and NLTK!** 
