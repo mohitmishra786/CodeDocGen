@@ -235,9 +235,28 @@ class Config:
             True if file should be ignored
         """
         file_str = str(file_path)
-        for pattern in self.get_ignore_patterns():
+        
+        # Check for virtual environment directories
+        if any(venv_dir in file_str for venv_dir in ['codedocgen/', 'venv/', 'env/', '.venv/', '.env/', 'site-packages/']):
+            return True
+        
+        # Check for other common ignore patterns
+        ignore_patterns = [
+            'node_modules',
+            '__pycache__',
+            'build',
+            'dist',
+            '.pyc',
+            '.o',
+            '.so',
+            '.dll',
+            '.exe'
+        ]
+        
+        for pattern in ignore_patterns:
             if pattern in file_str:
                 return True
+        
         return False
     
     def get_nltk_config(self) -> Dict[str, Any]:

@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 # CodeDocGen specific
-codedocgen/
+# codedocgen/
 sample_code/
 generated_docs/
 *.bak
