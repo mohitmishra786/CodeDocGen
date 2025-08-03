@@ -272,7 +272,7 @@ class DocumentationGenerator:
         if not return_doc:
             return ""
         
-        return return_doc + "\n"
+        return return_doc
     
     def _generate_return_description(self, function: Function) -> str:
         """
@@ -354,7 +354,7 @@ class DocumentationGenerator:
             return ""
         
         # Join exception documentation with newlines
-        return "\n".join(exception_docs.values()) + "\n"
+        return "\n".join(exception_docs.values())
     
     def apply_documentation_inplace(self, file_path: Path, documentation: Dict[str, str]) -> None:
         """
