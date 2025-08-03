@@ -38,12 +38,12 @@ A command-line tool and library that automatically generates Doxygen-style comme
 
 ### From TestPyPI (Latest Version)
 ```bash
-pip install --index-url https://test.pypi.org/simple/ code-doc-gen==1.0.15
+pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.0.16
 ```
 
 ### From PyPI (Stable Version)
 ```bash
-pip install code-doc-gen
+pip install code_doc_gen
 ```
 
 ## Usage
@@ -144,7 +144,7 @@ rules:
 
 ## Language-Aware Comment Detection
 
-CodeDocGen v1.0.15 introduces intelligent comment detection that prevents duplicate documentation:
+CodeDocGen v1.0.16 introduces intelligent comment detection that prevents duplicate documentation:
 
 ### Python Comment Detection
 ```python

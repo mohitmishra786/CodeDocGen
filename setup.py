@@ -23,8 +23,8 @@ if requirements_path.exists():
         requirements = [line.strip() for line in f if line.strip() and not line.startswith("#")]
 
 setup(
-    name="code-doc-gen",
-    version="1.0.15",
+    name="code_doc_gen",
+    version="1.0.16",
     author="Mohit Mishra",
     author_email="mohitmishra786687@gmail.com",
     description="Automatic documentation generation for Python and C++ codebases using rule-based analysis and NLTK",

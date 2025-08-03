@@ -1,14 +1,14 @@
-# CodeDocGen v1.0.15 Release Summary
+# CodeDocGen v1.0.16 Release Summary
 
 ## Release Information
-- **Version**: 1.0.15
+- **Version**: 1.0.16
 - **Release Date**: August 3, 2025
 - **Status**: Released
-- **GitHub Tag**: v1.0.15
-- **PyPI Package**: code-doc-gen
-- **TestPyPI**: https://test.pypi.org/project/code-doc-gen/1.0.15/
+- **GitHub Tag**: v1.0.16
+- **PyPI Package**: code_doc_gen
+- **TestPyPI**: https://test.pypi.org/project/code_doc_gen/1.0.16/
 
-## What's New in v1.0.15
+## What's New in v1.0.16
 
 ### 🎯 Language-Aware Comment Detection
 - **Automatic Language Inference**: Detects programming language from file extensions
@@ -53,7 +53,7 @@
 
 ### From TestPyPI (Latest)
 ```bash
-pip install --index-url https://test.pypi.org/simple/ code-doc-gen==1.0.15
+pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.0.16
 ```
 
 ### From PyPI (Stable)
@@ -158,10 +158,10 @@ results = generate_docs('/path/to/repo', inplace=True)
 - **Documentation**: https://github.com/mohitmishra786/CodeDocGen#readme
 
 ## Release Files
-- **Source Distribution**: `code_doc_gen-1.0.15.tar.gz`
-- **Wheel Distribution**: `code_doc_gen-1.0.15-py3-none-any.whl`
-- **GitHub Release**: https://github.com/mohitmishra786/CodeDocGen/releases/tag/v1.0.15
-- **TestPyPI**: https://test.pypi.org/project/code-doc-gen/1.0.15/
+- **Source Distribution**: `code_doc_gen-1.0.16.tar.gz`
+- **Wheel Distribution**: `code_doc_gen-1.0.16-py3-none-any.whl`
+- **GitHub Release**: https://github.com/mohitmishra786/CodeDocGen/releases/tag/v1.0.16
+- **TestPyPI**: https://test.pypi.org/project/code_doc_gen/1.0.16/
 
 ## Support
 - **Issues**: https://github.com/mohitmishra786/CodeDocGen/issues
@@ -170,4 +170,4 @@ results = generate_docs('/path/to/repo', inplace=True)
 
 ---
 
-**CodeDocGen v1.0.15 is now available with advanced language-aware comment detection!** 
+**CodeDocGen v1.0.16 is now available with advanced language-aware comment detection!** 

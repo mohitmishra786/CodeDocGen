@@ -1,4 +1,4 @@
-# CodeDocGen v1.0.15 Release Checklist
+# CodeDocGen v1.0.16 Release Checklist
 
 ## Pre-Release Tasks
 
@@ -18,7 +18,7 @@
 
 ### Configuration
 - [x] setup.py updated with correct metadata
-- [x] Version number set to 1.0.15
+- [x] Version number set to 1.0.16
 - [x] Author information updated
 - [x] Package description reflects current capabilities
 - [x] Requirements.txt is current
@@ -36,7 +36,7 @@
 - [x] Language-aware comment detection working
 - [x] Comment preservation and duplicate prevention working
 
-### New Features in v1.0.15
+### New Features in v1.0.16
 - [x] Language inference from file extensions
 - [x] Python comment detection (`#`, `"""`, `'''`, decorators)
 - [x] C++ comment detection (`//`, `/* */`, `/** */`, contiguous blocks)
@@ -51,11 +51,11 @@
 
 ### GitHub Release
 1. [x] Create a new release on GitHub
-2. [x] Tag: v1.0.15
-3. [x] Title: CodeDocGen v1.0.15 - Language-Aware Comment Detection
+2. [x] Tag: v1.0.16
+3. [x] Title: CodeDocGen v1.0.16 - Language-Aware Comment Detection
 4. [x] Description:
    ```
-   ## CodeDocGen v1.0.15 - Language-Aware Comment Detection
+       ## CodeDocGen v1.0.16 - Language-Aware Comment Detection
 
    ### 🎯 New Features
    - **Language-Aware Comment Detection**: Automatically detects existing comments to prevent duplicate documentation
@@ -76,10 +76,10 @@
    ### Installation
    ```bash
    # From TestPyPI (latest)
-   pip install --index-url https://test.pypi.org/simple/ code-doc-gen==1.0.15
+   pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.0.16
    
    # From PyPI (stable)
-   pip install code-doc-gen
+   pip install code_doc_gen
    ```
 
    ### Quick Start
@@ -105,13 +105,13 @@
    ```
 2. [x] Upload to TestPyPI
    ```bash
-   twine upload --repository testpypi dist/code_doc_gen-1.0.15*
+   twine upload --repository testpypi dist/code_doc_gen-1.0.16*
    ```
 
 ### PyPI Release (When Ready)
 1. [ ] Upload to PyPI
    ```bash
-   twine upload dist/code_doc_gen-1.0.15*
+   twine upload dist/code_doc_gen-1.0.16*
    ```
 
 ### Post-Release Tasks
@@ -122,7 +122,7 @@
 
 ## Version History
 
-### v1.0.15 (Current Release)
+### v1.0.16 (Current Release)
 - **Language-Aware Comment Detection**: Prevents duplicate documentation by detecting existing comments
 - **Automatic Language Inference**: Detects programming language from file extensions
 - **Enhanced Comment Detection**: Support for all comment types in Python, C++, and Java
