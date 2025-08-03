@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 # CodeDocGen specific
-# codedocgen/
+codedocgen/
 sample_code/
 generated_docs/
 *.bak
@@ -155,7 +155,5 @@ Thumbs.db
 nltk_data/
 
 # Temporary files
-tmp/
-temp/
 *.tmp
 *.temp 
