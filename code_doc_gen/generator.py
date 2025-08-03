@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from difflib import unified_diff
 
-from .models import Function, DocumentationResult
+from .models import Function, DocumentationResult, FunctionType
 from .config import Config
 
 
@@ -142,9 +142,9 @@ class DocumentationGenerator:
         if not template:
             # Fallback templates
             if lang == "c++":
-                template = "/**\n * \\brief {description}\n *\n{params}{returns}{throws}\n */"
+                template = "/**\n * \\brief {description}{params}{returns}{throws}\n */"
             elif lang == "python":
-                template = '"""\n    {description}\n\n{params}{returns}{raises}\n    """'
+                template = '"""\n    {description}\n{params}{returns}{raises}\n    """'
             elif lang == "java":
                 template = "/**\n * {description}\n *\n{params}{returns}{throws}\n */"
             else:
@@ -161,13 +161,62 @@ class DocumentationGenerator:
         
         description = function.detailed_description or function.brief_description or f"Function {function.name}"
         
-        return template.format(
-            description=description,
-            params=params_doc,
-            returns=returns_doc,
-            throws=throws_doc,
-            raises=throws_doc  # For Python compatibility
-        )
+        if lang == "c++":
+            # Only add newlines if the section is non-empty
+            params_doc = ("\n" + params_doc) if params_doc else ""
+            returns_doc = ("\n" + returns_doc) if returns_doc else ""
+            throws_doc = ("\n" + throws_doc) if throws_doc else ""
+            template = "/**\n * \\brief {description}{params}{returns}{throws}\n */"
+            return template.format(
+                description=description,
+                params=params_doc,
+                returns=returns_doc,
+                throws=throws_doc,
+                raises=throws_doc  # For Python compatibility
+            )
+        elif lang == "python":
+            # Check if we have any sections before processing
+            has_sections = any([params_doc, returns_doc, throws_doc])
+            
+            # Determine if this is a class method
+            is_class_method = function.function_type in [FunctionType.METHOD, FunctionType.CONSTRUCTOR, FunctionType.DESTRUCTOR] or function.class_name is not None
+            
+            if has_sections:
+                # Add newlines for sections
+                params_doc = ("\n" + params_doc) if params_doc else ""
+                returns_doc = ("\n" + returns_doc) if returns_doc else ""
+                throws_doc = ("\n" + throws_doc) if throws_doc else ""
+                
+                if is_class_method:
+                    template = '"""\n    {description}{params}{returns}{raises}\n"""'
+                else:
+                    template = '"""\n    {description}{params}{returns}{raises}\n"""'
+            else:
+                # No sections, no extra newlines
+                if is_class_method:
+                    template = '"""\n    {description}\n"""'
+                else:
+                    template = '"""\n    {description}\n"""'
+            
+            return template.format(
+                description=description,
+                params=params_doc,
+                returns=returns_doc,
+                throws=throws_doc,
+                raises=throws_doc  # For Python compatibility
+            )
+        else:
+            # Only add newlines if the section is non-empty
+            params_doc = ("\n" + params_doc) if params_doc else ""
+            returns_doc = ("\n" + returns_doc) if returns_doc else ""
+            throws_doc = ("\n" + throws_doc) if throws_doc else ""
+            return template.format(
+                description=description,
+                params=params_doc,
+                returns=returns_doc,
+                throws=throws_doc,
+                raises=throws_doc  # For Python compatibility
+            )
     
     def _generate_parameter_documentation(self, function: Function, lang: str) -> Dict[str, str]:
         """
@@ -222,7 +271,7 @@ class DocumentationGenerator:
             return ""
         
         # Join parameter documentation with newlines
-        return "\n".join(param_docs.values()) + "\n"
+        return "\n".join(param_docs.values())
     
     def _generate_return_documentation(self, function: Function, lang: str) -> Optional[str]:
         """
