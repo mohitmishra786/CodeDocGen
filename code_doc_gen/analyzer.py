@@ -246,6 +246,12 @@ class NLTKAnalyzer:
             nltk.data.find('taggers/averaged_perceptron_tagger')
         except LookupError:
             nltk.download('averaged_perceptron_tagger')
+            
+        # Also ensure punkt_tab is available for word_tokenize
+        try:
+            nltk.data.find('tokenizers/punkt_tab')
+        except LookupError:
+            nltk.download('punkt_tab')
     
     def analyze_function(self, function: Function) -> None:
         """
@@ -311,9 +317,9 @@ class NLTKAnalyzer:
         if function.brief_description:
             parts.append(function.brief_description)
         
-        # Add behavior description
+        # Add intelligent behavior description
         if function.body:
-            behavior = function.body.get_behavior_description()
+            behavior = self._generate_intelligent_behavior_description(function)
             if behavior:
                 parts.append(behavior)
         
@@ -330,6 +336,158 @@ class NLTKAnalyzer:
                 parts.append(return_desc)
         
         return " ".join(parts)
+    
+    def _generate_intelligent_behavior_description(self, function: Function) -> str:
+        """
+        Generate intelligent behavior description using NLTK analysis.
+        
+        Args:
+            function: Function to analyze
+            
+        Returns:
+            Intelligent behavior description
+        """
+        if not function.body:
+            return ""
+        
+        # Use NLTK to analyze function name and understand its purpose
+        func_name = function.name.lower()
+        param_names = [p.name.lower() for p in function.parameters]
+        param_types = [p.type.lower() for p in function.parameters]
+        
+        try:
+            # Tokenize and analyze function name
+            tokens = nltk.word_tokenize(func_name)
+            pos_tags = nltk.pos_tag(tokens)
+            
+            behaviors = []
+            
+            # Analyze the semantic meaning of the function name
+            verbs = [word for word, tag in pos_tags if tag.startswith('VB')]
+            nouns = [word for word, tag in pos_tags if tag.startswith('NN')]
+            adjectives = [word for word, tag in pos_tags if tag.startswith('JJ')]
+            
+            # Understand function purpose from name structure
+            if len(tokens) == 1:
+                word = tokens[0]
+                tag = pos_tags[0][1]
+                
+                if tag.startswith('VB'):
+                    # Single verb - understand the action
+                    if word in ['traverse', 'visit', 'explore']:
+                        behaviors.append("traverses data structures systematically")
+                    elif word in ['calculate', 'compute', 'evaluate']:
+                        behaviors.append("performs mathematical computations")
+                    elif word in ['validate', 'check', 'verify']:
+                        behaviors.append("validates input against criteria")
+                    elif word in ['process', 'transform', 'convert']:
+                        behaviors.append("transforms input data")
+                    elif word in ['get', 'retrieve', 'fetch']:
+                        behaviors.append("retrieves data from storage")
+                    elif word in ['set', 'assign', 'update']:
+                        behaviors.append("modifies data or state")
+                    else:
+                        behaviors.append(f"performs {word} operations")
+                
+                elif tag.startswith('NN'):
+                    # Single noun - understand what it processes
+                    if word in ['main', 'entry']:
+                        behaviors.append("serves as program entry point")
+                    elif word in ['init', 'setup', 'start']:
+                        behaviors.append("initializes system or component")
+                    elif word in ['cleanup', 'teardown', 'stop']:
+                        behaviors.append("cleans up resources")
+                    else:
+                        behaviors.append(f"processes {word} data")
+            
+            elif len(tokens) >= 2:
+                # Multi-word function names - understand the relationship
+                if verbs and nouns:
+                    verb = verbs[0]
+                    noun = nouns[0]
+                    
+                    if verb in ['get', 'retrieve', 'fetch']:
+                        behaviors.append(f"retrieves {noun} information")
+                    elif verb in ['set', 'assign', 'update']:
+                        behaviors.append(f"modifies {noun} data")
+                    elif verb in ['validate', 'check', 'verify']:
+                        behaviors.append(f"validates {noun} format or content")
+                    elif verb in ['process', 'transform']:
+                        behaviors.append(f"transforms {noun} data")
+                    elif verb in ['calculate', 'compute']:
+                        behaviors.append(f"calculates {noun} values")
+                    else:
+                        behaviors.append(f"performs {verb} operations on {noun}")
+                
+                elif adjectives and nouns:
+                    adj = adjectives[0]
+                    noun = nouns[0]
+                    behaviors.append(f"implements {adj} {noun} algorithm")
+                
+                elif len(nouns) >= 2:
+                    # Noun + Noun patterns like "userManager", "dataProcessor"
+                    behaviors.append(f"manages {nouns[0]} {nouns[1]} operations")
+            
+            # Analyze function body patterns to understand behavior
+            if function.body.has_loops:
+                if any('list' in t or 'array' in t for t in param_types):
+                    behaviors.append("iterates through collection elements")
+                elif any('string' in t for t in param_types):
+                    behaviors.append("processes string content sequentially")
+                elif any('graph' in t or 'tree' in t for t in param_types):
+                    behaviors.append("traverses graph or tree structure")
+                else:
+                    behaviors.append("iterates through data structures")
+            
+            if function.body.has_conditionals:
+                if any('validate' in n or 'check' in n for n in param_names):
+                    behaviors.append("evaluates conditions for validation")
+                elif any('search' in n for n in param_names):
+                    behaviors.append("compares elements during search")
+                else:
+                    behaviors.append("makes conditional decisions")
+            
+            if function.body.has_side_effects:
+                if any('init' in n or 'setup' in n for n in param_names):
+                    behaviors.append("initializes state or resources")
+                elif any('add' in n or 'append' in n for n in param_names):
+                    behaviors.append("modifies collections")
+                else:
+                    behaviors.append("modifies internal or external state")
+            
+            if function.body.has_arithmetic:
+                behaviors.append("performs mathematical operations")
+            
+            if function.body.has_exceptions:
+                behaviors.append("handles error conditions with exceptions")
+            
+            if function.body.has_early_returns:
+                behaviors.append("may return early based on conditions")
+            
+            if behaviors:
+                return f"Function {', '.join(behaviors)}."
+            return ""
+            
+        except (LookupError, OSError, ImportError):
+            # Fallback to basic analysis without NLTK
+            behaviors = []
+            
+            if function.body.has_loops:
+                behaviors.append("iterates through data structures")
+            if function.body.has_conditionals:
+                behaviors.append("makes conditional decisions")
+            if function.body.has_side_effects:
+                behaviors.append("modifies state or data")
+            if function.body.has_arithmetic:
+                behaviors.append("performs calculations")
+            if function.body.has_exceptions:
+                behaviors.append("handles exceptions")
+            if function.body.has_early_returns:
+                behaviors.append("may return early")
+            
+            if behaviors:
+                return f"Function {', '.join(behaviors)}."
+            return ""
     
     def _extract_noun_from_name(self, name: str) -> str:
         """
@@ -363,7 +521,7 @@ class NLTKAnalyzer:
     
     def _name_to_sentence(self, name: str) -> str:
         """
-        Convert a function name to a readable sentence.
+        Convert a function name to a readable sentence using NLTK.
         
         Args:
             name: Function name
@@ -371,6 +529,10 @@ class NLTKAnalyzer:
         Returns:
             Sentence describing the function
         """
+        # Special case for main function
+        if name.lower() == 'main':
+            return "Entry point of the program."
+        
         # Convert camelCase to words
         words = self.camel_case_pattern.findall(name)
         if not words:
@@ -380,31 +542,91 @@ class NLTKAnalyzer:
         if not words:
             return f"Performs {name} operation."
         
-        # Tokenize and tag parts of speech
+        # Use NLTK for intelligent analysis
         try:
+            # Tokenize the words
             tokens = nltk.word_tokenize(' '.join(words))
             pos_tags = nltk.pos_tag(tokens)
             
-            # Find verbs and nouns
+            # Analyze the structure
             verbs = [word for word, tag in pos_tags if tag.startswith('VB')]
             nouns = [word for word, tag in pos_tags if tag.startswith('NN')]
+            adjectives = [word for word, tag in pos_tags if tag.startswith('JJ')]
             
-            if verbs and nouns:
-                verb = verbs[0].lower()
-                noun = nouns[0].lower()
-                return f"{verb.capitalize()} the {noun}."
-            elif verbs:
-                verb = verbs[0].lower()
-                return f"{verb.capitalize()} the specified value."
-            elif nouns:
-                noun = nouns[0].lower()
-                return f"Processes the {noun}."
-            else:
-                return f"Performs {name.lower()} operation."
+            # Handle different patterns
+            if len(tokens) == 1:
+                word = tokens[0].lower()
+                tag = pos_tags[0][1]
                 
-        except (LookupError, OSError, ImportError):
-            # Fallback to simple conversion
-            return f"Performs {name.lower()} operation."
+                if tag.startswith('VB'):
+                    # Single verb - describe the action
+                    return f"Executes {word} operation."
+                elif tag.startswith('NN'):
+                    # Single noun - describe what it processes
+                    if word in ['dfs', 'bfs', 'dijkstra', 'kruskal', 'prim']:
+                        return f"Implements {word.upper()} algorithm."
+                    elif word in ['sort', 'filter', 'map', 'reduce', 'search']:
+                        return f"Applies {word} operation to data."
+                    elif word in ['init', 'setup', 'start']:
+                        return f"Initializes the system or component."
+                    elif word in ['cleanup', 'teardown', 'stop']:
+                        return f"Cleans up resources and terminates."
+                    else:
+                        return f"Processes {word} data or operations."
+                else:
+                    return f"Handles {word} operations."
+            
+            elif len(tokens) == 2:
+                # Two-word patterns
+                word1, tag1 = pos_tags[0]
+                word2, tag2 = pos_tags[1]
+                
+                if tag1.startswith('VB') and tag2.startswith('NN'):
+                    # Verb + Noun: "getUser", "setValue"
+                    return f"{word1.capitalize()} the {word2}."
+                elif tag1.startswith('JJ') and tag2.startswith('NN'):
+                    # Adjective + Noun: "quickSort", "binarySearch"
+                    return f"Implements {word1} {word2} algorithm."
+                elif tag1.startswith('NN') and tag2.startswith('NN'):
+                    # Noun + Noun: "userManager", "dataProcessor"
+                    return f"Manages {word1} {word2} operations."
+            
+            elif len(tokens) >= 3:
+                # Multi-word patterns - use NLTK to understand structure
+                if verbs and nouns:
+                    verb = verbs[0].lower()
+                    noun = nouns[0].lower()
+                    return f"{verb.capitalize()} the {noun}."
+                elif verbs:
+                    verb = verbs[0].lower()
+                    return f"{verb.capitalize()} the specified data or values."
+                elif nouns:
+                    noun = nouns[0].lower()
+                    return f"Processes {noun} data or operations."
+                else:
+                    # Fallback for complex names
+                    return f"Handles {name.lower()} operations."
+            
+            else:
+                return f"Processes {name.lower()} operations."
+                
+        except (LookupError, OSError, ImportError) as e:
+            # Fallback to intelligent pattern matching
+            word = name.lower()
+            
+            # Common algorithm patterns
+            if word in ['dfs', 'bfs', 'dijkstra', 'kruskal', 'prim', 'bellmanford']:
+                return f"Implements {word.upper()} algorithm."
+            elif word in ['quicksort', 'mergesort', 'heapsort', 'bubblesort']:
+                return f"Implements {word} sorting algorithm."
+            elif word in ['binarysearch', 'linearsearch']:
+                return f"Implements {word} search algorithm."
+            elif word in ['main', 'init', 'setup']:
+                return "Initializes or starts the program."
+            elif word in ['cleanup', 'teardown', 'destroy']:
+                return "Cleans up resources and terminates."
+            else:
+                return f"Processes {word} operations."
     
     def _fill_template(self, template: str, function: Function) -> str:
         """
@@ -452,7 +674,7 @@ class NLTKAnalyzer:
     
     def _describe_return_type(self, function: Function) -> str:
         """
-        Generate a description of the return type.
+        Generate a description of the return type using NLTK analysis.
         
         Args:
             function: Function to analyze
@@ -461,23 +683,88 @@ class NLTKAnalyzer:
             Return type description string
         """
         return_type = function.return_type.lower()
+        func_name = function.name.lower()
         
-        if return_type == 'bool':
-            return "Returns true or false."
-        elif return_type in ['int', 'integer']:
-            return "Returns an integer value."
-        elif return_type in ['float', 'double']:
-            return "Returns a floating-point value."
-        elif return_type in ['string', 'str']:
-            return "Returns a string value."
-        elif return_type in ['list', 'array']:
-            return "Returns a list of values."
-        elif return_type in ['dict', 'map']:
-            return "Returns a dictionary of values."
-        elif return_type == 'void':
-            return "Returns nothing."
-        else:
-            return f"Returns a {return_type} value."
+        try:
+            # Use NLTK to understand function purpose and return type
+            tokens = nltk.word_tokenize(func_name)
+            pos_tags = nltk.pos_tag(tokens)
+            
+            verbs = [word for word, tag in pos_tags if tag.startswith('VB')]
+            nouns = [word for word, tag in pos_tags if tag.startswith('NN')]
+            
+            # Understand return type based on function purpose
+            if return_type == 'bool':
+                if verbs and any(v in ['validate', 'check', 'verify', 'is', 'has'] for v in verbs):
+                    return "Returns true if the condition is met, false otherwise."
+                else:
+                    return "Returns a boolean result of the operation."
+            
+            elif return_type in ['int', 'integer']:
+                if verbs and any(v in ['calculate', 'compute', 'count', 'sum'] for v in verbs):
+                    return "Returns the calculated integer result."
+                elif nouns and any(n in ['index', 'position', 'size', 'length'] for n in nouns):
+                    return "Returns the position, index, or count value."
+                else:
+                    return "Returns an integer value from the operation."
+            
+            elif return_type in ['float', 'double']:
+                if verbs and any(v in ['calculate', 'compute', 'average', 'mean'] for v in verbs):
+                    return "Returns the calculated floating-point result."
+                else:
+                    return "Returns a floating-point value from the calculation."
+            
+            elif return_type in ['string', 'str']:
+                if verbs and any(v in ['format', 'convert', 'toString'] for v in verbs):
+                    return "Returns the formatted or converted string."
+                elif verbs and any(v in ['get', 'retrieve'] for v in verbs):
+                    return "Returns the retrieved string data."
+                else:
+                    return "Returns a string value from the operation."
+            
+            elif return_type in ['list', 'array']:
+                if verbs and any(v in ['get', 'retrieve', 'fetch'] for v in verbs):
+                    return "Returns the retrieved list of items."
+                elif verbs and any(v in ['process', 'filter', 'transform'] for v in verbs):
+                    return "Returns the processed list of results."
+                else:
+                    return "Returns a list of processed values."
+            
+            elif return_type in ['dict', 'map']:
+                if verbs and any(v in ['get', 'retrieve'] for v in verbs):
+                    return "Returns the retrieved data as key-value pairs."
+                else:
+                    return "Returns a dictionary containing structured data."
+            
+            elif return_type == 'void':
+                if verbs and any(v in ['traverse', 'visit', 'explore'] for v in verbs):
+                    return "Returns nothing (performs traversal operations)."
+                elif verbs and any(v in ['set', 'update', 'modify'] for v in verbs):
+                    return "Returns nothing (modifies state or data)."
+                else:
+                    return "Returns nothing (performs side effects only)."
+            
+            else:
+                return f"Returns a {return_type} value from the operation."
+                
+        except (LookupError, OSError, ImportError):
+            # Fallback to basic type descriptions
+            if return_type == 'bool':
+                return "Returns true or false based on the operation result."
+            elif return_type in ['int', 'integer']:
+                return "Returns an integer value from the calculation."
+            elif return_type in ['float', 'double']:
+                return "Returns a floating-point value from the calculation."
+            elif return_type in ['string', 'str']:
+                return "Returns a string value or formatted text."
+            elif return_type in ['list', 'array']:
+                return "Returns a list or array of processed values."
+            elif return_type in ['dict', 'map']:
+                return "Returns a dictionary containing key-value pairs."
+            elif return_type == 'void':
+                return "Returns nothing (performs side effects only)."
+            else:
+                return f"Returns a {return_type} value from the operation."
     
     def _analyze_function_body(self, body: FunctionBody) -> None:
         """
@@ -509,7 +796,7 @@ class NLTKAnalyzer:
     
     def _generate_parameter_description(self, parameter: Parameter) -> str:
         """
-        Generate a description for a parameter.
+        Generate a description for a parameter using NLTK analysis.
         
         Args:
             parameter: Parameter to describe
@@ -517,8 +804,65 @@ class NLTKAnalyzer:
         Returns:
             Parameter description string
         """
-        type_desc = self._get_type_description(parameter.type)
-        return f"The {parameter.name} {type_desc}."
+        param_name = parameter.name.lower()
+        param_type = parameter.type.lower()
+        
+        try:
+            # Use NLTK to understand parameter meaning
+            tokens = nltk.word_tokenize(param_name)
+            pos_tags = nltk.pos_tag(tokens)
+            
+            # Analyze parameter name structure
+            if len(tokens) == 1:
+                word = tokens[0]
+                tag = pos_tags[0][1]
+                
+                if tag.startswith('NN'):
+                    # Noun - understand what it represents
+                    if word in ['node', 'vertex']:
+                        return f"The {word} to process in graph/tree structure."
+                    elif word in ['data', 'input', 'value']:
+                        return f"The {word} to be processed."
+                    elif word in ['result', 'output']:
+                        return f"The {word} to store results."
+                    elif word in ['list', 'array', 'collection']:
+                        return f"The {word} of items to process."
+                    elif word in ['count', 'number', 'size']:
+                        return f"The {word} value for calculations."
+                    elif word in ['id', 'key', 'index']:
+                        return f"The {word} for identification."
+                    else:
+                        return f"The {word} parameter."
+                
+                elif tag.startswith('JJ'):
+                    # Adjective - describe the type
+                    return f"The {word} parameter."
+                
+                else:
+                    # Other parts of speech
+                    return f"The {word} parameter."
+            
+            elif len(tokens) >= 2:
+                # Multi-word parameter names
+                if any(tag.startswith('NN') for _, tag in pos_tags):
+                    # Contains nouns - understand the object
+                    nouns = [word for word, tag in pos_tags if tag.startswith('NN')]
+                    if 'id' in nouns or 'identifier' in nouns:
+                        return f"The identifier for the {' '.join(nouns)}."
+                    elif 'list' in nouns or 'array' in nouns:
+                        return f"The {' '.join(nouns)} to process."
+                    else:
+                        return f"The {' '.join(nouns)} parameter."
+                else:
+                    return f"The {param_name} parameter."
+            
+            else:
+                return f"The {param_name} parameter."
+                
+        except (LookupError, OSError, ImportError):
+            # Fallback to type-based description
+            type_desc = self._get_type_description(parameter.type)
+            return f"The {parameter.name} {type_desc}."
     
     def _get_type_description(self, type_name: str) -> str:
         """
