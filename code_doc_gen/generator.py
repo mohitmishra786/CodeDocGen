@@ -373,8 +373,11 @@ class DocumentationGenerator:
             with open(file_path, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
             
+            # Infer language from file extension
+            lang = self._infer_language_from_extension(file_path)
+            
             # Apply documentation
-            modified_lines = self._insert_documentation(lines, documentation)
+            modified_lines = self._insert_documentation(lines, documentation, lang)
             
             # Write the modified file
             with open(file_path, 'w', encoding='utf-8') as f:
@@ -387,7 +390,27 @@ class DocumentationGenerator:
             shutil.copy2(backup_path, file_path)
             raise e
     
-    def _insert_documentation(self, lines: List[str], documentation: Dict[str, str]) -> List[str]:
+    def _infer_language_from_extension(self, file_path: Path) -> str:
+        """
+        Infer programming language from file extension.
+        
+        Args:
+            file_path: Path to the file
+            
+        Returns:
+            Language string ('python', 'c++', 'java', or 'unknown')
+        """
+        ext = file_path.suffix.lower()
+        if ext == '.py':
+            return 'python'
+        elif ext in ['.cpp', '.cc', '.cxx', '.h', '.hpp', '.hxx']:
+            return 'c++'
+        elif ext == '.java':
+            return 'java'
+        else:  # Fallback for other languages
+            return 'unknown'
+    
+    def _insert_documentation(self, lines: List[str], documentation: Dict[str, str], lang: str) -> List[str]:
         """
         Insert documentation into file lines.
         """
@@ -420,10 +443,10 @@ class DocumentationGenerator:
                     indent = match.group(1) or ''
                     
                     # Check if there's existing documentation before this function
-                    existing_doc_start = self._find_existing_documentation_start(lines, i)
+                    existing_doc_start = self._find_existing_documentation_start(lines, i, lang)
                     
                     # Check if there's inline documentation on the same line
-                    has_inline_doc = self._has_inline_documentation(lines, i)
+                    has_inline_doc = self._has_inline_documentation(lines, i, lang)
                     
                     # Check if there are decorators before this function
                     has_decorators = self._has_decorators_before(lines, i)
@@ -451,13 +474,14 @@ class DocumentationGenerator:
             
         return modified_lines
     
-    def _find_existing_documentation_start(self, lines: List[str], function_line_index: int) -> Optional[int]:
+    def _find_existing_documentation_start(self, lines: List[str], function_line_index: int, lang: str) -> Optional[int]:
         """
         Find the start of existing documentation before a function.
         
         Args:
             lines: All lines in the file
             function_line_index: Index of the function definition line
+            lang: Programming language
             
         Returns:
             Index of the start of existing documentation, or None if no existing documentation
@@ -475,58 +499,149 @@ class DocumentationGenerator:
         if i < 0:
             return None
         
-        # Check if the line before the function is a docstring or comment
         line = lines[i].strip()
         
-        # Python docstrings
-        if (line.startswith('"""') or line.startswith("'''") or 
-            line.endswith('"""') or line.endswith("'''")):
-            return i
-        
-        # C++/Java comments
-        if (line.startswith('/**') or line.startswith('/*') or 
-            line.startswith('*') or line.endswith('*/')):
-            return i
-        
-        # Check for multi-line docstrings by looking backwards
-        if i > 0:
-            # Look for the start of a multi-line docstring
-            j = i
-            while j >= 0:
-                prev_line = lines[j].strip()
-                
-                # Check for docstring markers
-                if (prev_line.startswith('"""') or prev_line.startswith("'''") or
-                    prev_line.startswith('/**') or prev_line.startswith('/*')):
-                    return j
-                
-                # Check for docstring content (param, return, etc.)
-                if (prev_line.startswith(':param') or prev_line.startswith(':return') or
-                    prev_line.startswith('\\param') or prev_line.startswith('\\brief') or
-                    prev_line.startswith('\\return') or prev_line.startswith('\\throws') or
-                    prev_line.startswith('*')):
-                    j -= 1
-                    continue
-                
-                # If we hit a non-empty line that's not docstring content, stop
-                if prev_line and not prev_line.startswith('*'):
-                    break
-                
-                j -= 1
+        # Language-specific handling
+        if lang == 'python':
+            # Handle decorators
+            while i >= 0 and line.startswith('@'):
+                i -= 1
+                while i >= 0 and not lines[i].strip():
+                    i -= 1
+                if i < 0: 
+                    return None
+                line = lines[i].strip()
             
-            # If we found docstring content, return the start
-            if j < i:
-                return j + 1
+            # Detect Python comments
+            if (line.startswith('"""') or line.startswith("'''") or 
+                line.startswith('#') or 
+                line.endswith('"""') or line.endswith("'''")):
+                return i
+            
+            # Check for comment blocks (look backwards more carefully)
+            j = i
+            while j >= max(0, i-5):  # Check 5 lines above
+                check_line = lines[j].strip()
+                if check_line.startswith('#') or check_line.startswith('"""') or check_line.startswith("'''"):
+                    # Make sure this comment is actually before our function
+                    # and not part of another function's documentation
+                    k = j + 1
+                    found_function_between = False
+                    while k < function_line_index:
+                        if lines[k].strip():
+                            if lines[k].strip().startswith('def ') or lines[k].strip().startswith('async def '):
+                                # Found another function between comment and our function
+                                found_function_between = True
+                                break
+                            elif not lines[k].strip().startswith('#'):
+                                # Found non-comment, non-function line
+                                break
+                        k += 1
+                    
+                    if not found_function_between:
+                        # Additional check: make sure there's no function definition between this comment and our function
+                        for k in range(j + 1, function_line_index):
+                            if lines[k].strip().startswith('def ') or lines[k].strip().startswith('async def '):
+                                return None
+                        return j
+                j -= 1
+        
+        elif lang == 'c++':
+            # Detect C++ comments
+            if (line.startswith('//') or line.startswith('/*') or 
+                line.startswith('/**') or line.endswith('*/') or 
+                line.startswith('*')):
+                return i
+            
+            # Check for contiguous // comments
+            if line.startswith('//'):
+                start_index = i
+                j = i - 1
+                while j >= 0 and lines[j].strip().startswith('//'):
+                    start_index = j
+                    j -= 1
+                return start_index
+            
+            # Check for multi-line comments (look backwards more carefully)
+            j = i
+            while j >= max(0, i-5):  # Check 5 lines above
+                check_line = lines[j].strip()
+                if check_line.startswith('/*') or check_line.startswith('/**') or check_line.startswith('*'):
+                    # Make sure this comment is actually before our function
+                    # and not part of another function's documentation
+                    k = j + 1
+                    found_function_between = False
+                    while k < function_line_index:
+                        if lines[k].strip():
+                            # Check for C++ function patterns
+                            if (('void ' in lines[k] or 'int ' in lines[k] or 'bool ' in lines[k] or 
+                                 'string ' in lines[k] or 'char ' in lines[k] or 'float ' in lines[k] or
+                                 'double ' in lines[k] or 'auto ' in lines[k]) and 
+                                '(' in lines[k] and ')' in lines[k]):
+                                # Found another function between comment and our function
+                                found_function_between = True
+                                break
+                            elif not (lines[k].strip().startswith('*') or lines[k].strip().startswith('//')):
+                                # Found non-comment line
+                                break
+                        k += 1
+                    
+                    if not found_function_between:
+                        # Additional check: make sure there's no function definition between this comment and our function
+                        for k in range(j + 1, function_line_index):
+                            if (('void ' in lines[k] or 'int ' in lines[k] or 'bool ' in lines[k] or 
+                                 'string ' in lines[k] or 'char ' in lines[k] or 'float ' in lines[k] or
+                                 'double ' in lines[k] or 'auto ' in lines[k]) and 
+                                '(' in lines[k] and ')' in lines[k]):
+                                return None
+                        return j
+                j -= 1
+        
+        # Fallback for other languages or general cases
+        # Only apply fallback logic for specific languages we want to support
+        if lang == 'java':
+            # Java comments (similar to C++)
+            if (line.startswith('/**') or line.startswith('/*') or 
+                line.startswith('*') or line.endswith('*/')):
+                return i
+            
+            # Check for multi-line comments by looking backwards
+            if i > 0:
+                # Look for the start of a multi-line comment
+                j = i
+                while j >= 0:
+                    prev_line = lines[j].strip()
+                    
+                    # Check for comment markers
+                    if (prev_line.startswith('/**') or prev_line.startswith('/*')):
+                        return j
+                    
+                    # Check for comment content
+                    if (prev_line.startswith('*') or prev_line.startswith('@param') or 
+                        prev_line.startswith('@return') or prev_line.startswith('@throws')):
+                        j -= 1
+                        continue
+                    
+                    # If we hit a non-empty line that's not comment content, stop
+                    if prev_line and not prev_line.startswith('*'):
+                        break
+                    
+                    j -= 1
+                
+                # If we found comment content, return the start
+                if j < i:
+                    return j + 1
         
         return None
     
-    def _has_inline_documentation(self, lines: List[str], function_line_index: int) -> bool:
+    def _has_inline_documentation(self, lines: List[str], function_line_index: int, lang: str) -> bool:
         """
         Check if a function has inline documentation (docstring on the same line or immediately after).
         
         Args:
             lines: All lines in the file
             function_line_index: Index of the function definition line
+            lang: Programming language
             
         Returns:
             True if the function has inline documentation, False otherwise
@@ -536,19 +651,43 @@ class DocumentationGenerator:
         
         function_line = lines[function_line_index]
         
-        # Check for inline docstrings in Python on the same line
-        if '"""' in function_line or "'''" in function_line:
-            return True
-        
-        # Check for inline comments in C++ on the same line
-        if '//' in function_line or '/*' in function_line:
-            return True
-        
-        # Check for docstrings immediately after the function definition
-        if function_line_index + 1 < len(lines):
-            next_line = lines[function_line_index + 1].strip()
-            if next_line.startswith('"""') or next_line.startswith("'''"):
+        # Language-specific checks
+        if lang == 'python':
+            # Same-line checks
+            if any(marker in function_line for marker in ['#', '"""', "'''"]):
                 return True
+            
+            # Next-line checks
+            if function_line_index + 1 < len(lines):
+                next_line = lines[function_line_index + 1].strip()
+                if any(next_line.startswith(marker) for marker in ['"""', "'''", '#']):
+                    return True
+        
+        elif lang == 'c++':
+            # Same-line checks
+            if any(marker in function_line for marker in ['//', '/*', '/**']):
+                return True
+            
+            # Next-line checks
+            if function_line_index + 1 < len(lines):
+                next_line = lines[function_line_index + 1].strip()
+                if any(next_line.startswith(marker) for marker in ['//', '/*', '/**', '*']):
+                    return True
+        
+        # Fallback for other languages
+        elif lang == 'java':
+            # Same-line checks for Java
+            if any(marker in function_line for marker in ['//', '/*', '/**']):
+                return True
+            
+            # Next-line checks for Java
+            if function_line_index + 1 < len(lines):
+                next_line = lines[function_line_index + 1].strip()
+                if any(next_line.startswith(marker) for marker in ['//', '/*', '/**', '*']):
+                    return True
+        
+        # For unknown languages, don't detect any comments
+        # This prevents false positives for languages we don't support
         
         return False
     
@@ -637,8 +776,11 @@ class DocumentationGenerator:
             with open(file_path, 'r', encoding='utf-8') as f:
                 original_lines = f.readlines()
             
+            # Infer language from file extension
+            lang = self._infer_language_from_extension(file_path)
+            
             # Generate modified lines
-            modified_lines = self._insert_documentation(original_lines, documentation)
+            modified_lines = self._insert_documentation(original_lines, documentation, lang)
             
             # Generate diff
             diff = list(unified_diff(

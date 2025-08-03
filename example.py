@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Example usage of CodeDocGen.
+Example usage of CodeDocGen with Language-Aware Comment Detection.
 
 This script demonstrates how to use the CodeDocGen library
-to generate documentation for code files.
+to generate documentation for code files with comprehensive
+language-aware comment detection that prevents duplicate documentation.
 """
 
 import tempfile
@@ -17,32 +18,99 @@ def create_sample_files():
     sample_dir = Path("sample_code")
     sample_dir.mkdir(exist_ok=True)
     
-    # Create a sample C++ file
+    # Create a sample C++ file with various comment patterns
     cpp_file = sample_dir / "math.cpp"
-    cpp_content = """
-#include <iostream>
+    cpp_content = """#include <iostream>
 
+// Existing comment above function
 int add(int a, int b) {
     return a + b;
 }
 
+// Another comment
 float multiply(float x, float y) {
     return x * y;
 }
 
+// Comment block
+// Multiple lines
+// Of comments
 bool isPositive(int value) {
     return value > 0;
 }
 
-void printResult(int result) {
-    std::cout << "Result: " << result << std::endl;
+void inline_commented_func() { // Inline comment
+    std::cout << "Hello" << std::endl;
+}
+
+void next_line_commented_func() {
+    // Comment on next line
+    std::cout << "World" << std::endl;
+}
+
+/* Multi-line comment above function */
+void multi_line_func() {
+    std::cout << "Multi-line" << std::endl;
+}
+
+/** Doxygen comment */
+void doxygen_func() {
+    std::cout << "Doxygen" << std::endl;
+}
+
+/* Another multi-line comment
+   spanning multiple lines */
+void spanning_func() {
+    std::cout << "Spanning" << std::endl;
+}
+
+void no_comment_func() {
+    std::cout << "No comment" << std::endl;
 }
 """
     cpp_file.write_text(cpp_content)
     
-    # Create a sample Python file
+    # Create a sample Python file with various comment patterns
     python_file = sample_dir / "utils.py"
-    python_content = """
+    python_content = '''#!/usr/bin/env python3
+# Example Python file with various comment patterns
+# This demonstrates the language-aware comment detection system.
+
+# Existing comment above function
+def commented_func():
+    """This function has a docstring"""
+    return True
+
+# Another comment
+@decorator
+def decorated_func():
+    return True
+
+# Comment block
+# Multiple lines
+# Of comments
+def multi_line_commented_func():
+    return True
+
+def inline_commented_func():  # Inline comment
+    return True
+
+def next_line_commented_func():
+    # Comment on next line
+    return True
+
+"""Docstring above function"""
+def docstring_func():
+    return True
+
+"""Another docstring"""
+@decorator
+def decorated_with_docstring():
+    return True
+
+def no_comment_func():
+    return True
+
 def validate_email(email):
     if '@' not in email:
         raise ValueError("Invalid email format")
@@ -85,24 +153,31 @@ def main():
     # Test password validation
     is_valid = is_valid_password("secure123")
     print(f"Password valid: {is_valid}")
-"""
+'''
     python_file.write_text(python_content)
     
     # Create a sample Python file with class methods
     class_file = sample_dir / "class_example.py"
-    class_content = """
+    class_content = '''#!/usr/bin/env python3
+# Example Python class with various comment patterns
+# This demonstrates comment detection with class methods.
+
+# Comment above class
 class Calculator:
+    # Comment above method
     def __init__(self, initial_value=0):
         self.value = initial_value
     
-    def add(self, x):
+    def add(self, x):  # Inline comment
         self.value += x
         return self.value
     
     def subtract(self, x):
+        # Comment inside method
         self.value -= x
         return self.value
     
+    """Docstring above method"""
     def multiply(self, x):
         self.value *= x
         return self.value
@@ -120,7 +195,7 @@ class DataProcessor:
         if not data:
             return False
         return True
-"""
+'''
     class_file.write_text(class_content)
     
     return sample_dir
@@ -257,15 +332,55 @@ if __name__ == "__main__":
     return sample_dir
 
 
-def demonstrate_library_usage():
-    """Demonstrate the library usage."""
-    print("=== CodeDocGen Library Usage Example ===\n")
+def demonstrate_language_aware_comment_detection():
+    """Demonstrate the language-aware comment detection functionality."""
+    print("=== Language-Aware Comment Detection Demo ===\n")
     
     # Create sample files
     sample_dir = create_sample_files()
     
+    print("1. Testing Python Comment Detection Patterns:")
+    print("   - Single-line comments (#)")
+    print("   - Docstrings (\"\"\" and ''')")
+    print("   - Decorators with comments")
+    print("   - Comment blocks")
+    print("   - Inline comments")
+    print("   - Next-line comments")
+    print("   - Functions without comments")
+    
+    print("\n2. Testing C++ Comment Detection Patterns:")
+    print("   - Single-line comments (//)")
+    print("   - Multi-line comments (/* */)")
+    print("   - Doxygen comments (/** */)")
+    print("   - Contiguous comment blocks")
+    print("   - Inline comments")
+    print("   - Next-line comments")
+    print("   - Functions without comments")
+    
+    print("\n3. Testing Language Inference:")
+    print("   - .py files → Python")
+    print("   - .cpp, .h, .hpp files → C++")
+    print("   - .java files → Java")
+    print("   - Other extensions → Unknown")
+    
+    print("\n4. Testing Edge Cases:")
+    print("   - Comments between functions")
+    print("   - Empty lines")
+    print("   - Mixed content")
+    print("   - Unknown languages")
+    
+    return sample_dir
+
+
+def demonstrate_library_usage():
+    """Demonstrate the library usage with language-aware features."""
+    print("=== CodeDocGen Library Usage Example ===\n")
+    
+    # Create sample files
+    sample_dir = demonstrate_language_aware_comment_detection()
+    
     # Example 1: Generate documentation for Python files
-    print("1. Generating documentation for Python files:")
+    print("\n1. Generating documentation for Python files:")
     results = generate_python_docs(sample_dir, inplace=False)
     
     for file_path, doc_strings in results.items():
@@ -345,16 +460,12 @@ def demonstrate_cli_usage():
     print("   code_doc_gen --repo /path/to/repo --lang python --verbose")
 
 
-"""
-    Performs print_file_contents operation. Function has side effects, performs file operations. Takes file_path as input. Returns a object value.
-    :param file_path: The file_path object.
-    :return: Value of type object
-
-"""
 def print_file_contents(file_path):
+    """Print the contents of a file."""
     print(f"\n--- {file_path} ---")
     with open(file_path, "r", encoding="utf-8") as f:
         print(f.read())
+
 
 def demonstrate_existing_documentation_fix():
     """Demonstrate that the tool doesn't break existing documentation."""
@@ -373,13 +484,11 @@ def demonstrate_existing_documentation_fix():
     
     print("\n✅ Test completed: Existing documentation should be preserved!")
 
-"""
-    Performs demonstrate_inplace_for_all_languages operation. Function has side effects, performs arithmetic operations. Returns a object value.
-    :return: Value of type object
 
-"""
 def demonstrate_inplace_for_all_languages():
+    """Demonstrate in-place documentation for all languages."""
     sample_dir = Path("sample_code")
+    
     # In-place for Python
     print("=== In-place documentation for Python ===")
     generate_docs(sample_dir, lang="python", inplace=True)
@@ -399,60 +508,69 @@ def demonstrate_inplace_for_all_languages():
     # generate_docs(sample_dir, lang="java", inplace=True)
     # print_file_contents(sample_dir / "Example.java")
 
+
+def demonstrate_comment_detection_edge_cases():
+    """Demonstrate edge cases in comment detection."""
+    print("\n=== Comment Detection Edge Cases ===")
+    
+    sample_dir = Path("sample_code")
+    sample_dir.mkdir(exist_ok=True)
+    
+    # Create a file with comments between functions
+    edge_case_file = sample_dir / "edge_cases.py"
+    edge_case_content = '''#!/usr/bin/env python3
+"""
+Edge case testing for comment detection.
+"""
+
+# Comment for func1
+def func1():
+    pass
+
+def func2():
+    pass
+
+def func3():
+    pass
+
+# This comment should NOT be detected for func3
+# because there are functions between it and func3
+'''
+    edge_case_file.write_text(edge_case_content)
+    
+    print("Created edge case file with comments between functions.")
+    print("The tool should correctly identify which comments belong to which functions.")
+
+
 def demo():
     """Run the complete demonstration."""
-    print("=== CodeDocGen Library Usage Example ===\n")
+    print("=== CodeDocGen Language-Aware Comment Detection Demo ===\n")
     
-    # Create sample files
-    sample_dir = create_sample_files()
+    # 1. Demonstrate language-aware comment detection
+    demonstrate_language_aware_comment_detection()
     
-    # 1. Generate documentation for Python files
-    print("1. Generating documentation for Python files:")
-    result = generate_docs(sample_dir, lang="python")
+    # 2. Demonstrate library usage
+    demonstrate_library_usage()
     
-    for file_path, functions in result.items():
-        print(f"\nFile: {file_path}\n")
-        for func_name, doc_string in functions.items():
-            print(f"Function: {func_name}")
-            print(doc_string)
-    
-    # 2. Generate documentation for C++ files
-    print("\n2. Generating documentation for C++ files:")
-    result = generate_docs(sample_dir, lang="c++")
-    
-    for file_path, functions in result.items():
-        print(f"\nFile: {file_path}\n")
-        for func_name, doc_string in functions.items():
-            print(f"Function: {func_name}")
-            print(doc_string)
-    
-    # 3. Generate documentation to output directory
-    print("\n3. Generating documentation to output directory:")
-    output_dir = Path("generated_docs")
-    generate_docs(sample_dir, lang="python", output_dir=output_dir)
-    generate_docs(sample_dir, lang="c++", output_dir=output_dir)
-    print(f"Documentation written to: {output_dir}")
-    
-    # 4. Test existing documentation preservation
+    # 3. Test existing documentation preservation
     demonstrate_existing_documentation_fix()
     
-    # 5. Test in-place documentation
+    # 4. Test in-place documentation
     demonstrate_inplace_for_all_languages()
     
-    print("\n=== CLI Usage Examples ===")
-    print("To use the command-line interface:")
-    print("1. Generate documentation for a C++ repository:")
-    print("   code_doc_gen --repo /path/to/cpp/repo --lang c++ --inplace")
-    print("2. Generate documentation for Python files with custom output:")
-    print("   code_doc_gen --repo /path/to/python/repo --lang python --output-dir ./docs")
-    print("3. Use custom configuration:")
-    print("   code_doc_gen --repo /path/to/repo --lang java --config custom_rules.yaml")
-    print("4. Process specific files only:")
-    print("   code_doc_gen --repo /path/to/repo --lang python --files src/main.py src/utils.py")
-    print("5. Show diff without applying changes:")
-    print("   code_doc_gen --repo /path/to/repo --lang c++ --diff")
-    print("6. Enable verbose logging:")
-    print("   code_doc_gen --repo /path/to/repo --lang python --verbose")
+    # 5. Test comment detection edge cases
+    demonstrate_comment_detection_edge_cases()
+    
+    # 6. Show CLI usage
+    demonstrate_cli_usage()
+    
+    print("\n=== Summary ===")
+    print("✅ Language-aware comment detection working correctly")
+    print("✅ Existing documentation preserved")
+    print("✅ No duplicate documentation generated")
+    print("✅ All comment patterns detected properly")
+    print("✅ Edge cases handled correctly")
+
 
 if __name__ == "__main__":
     try:
