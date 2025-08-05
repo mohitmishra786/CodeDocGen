@@ -54,7 +54,7 @@ class AIAnalyzer:
         self.retry_delay = ai_config.get('retry_delay', 1.0)
         self.models = ai_config.get('models', {
             'phind': 'gpt-3.5-turbo',
-            'groq': 'llama3-70b-8192',
+            'groq': ['llama3-8b-8192', 'llama3.1-8b-instant', 'llama3-70b-8192'],
             'openai': 'gpt-4o-mini'
         })
         
@@ -667,7 +667,7 @@ Do NOT include introductory text like "Here is the comment:" or similar."""
     
     def _call_groq(self, prompt: str) -> Optional[str]:
         """
-        Call Groq API.
+        Call Groq API with multiple model fallback.
         
         Args:
             prompt: Prompt to send
@@ -687,25 +687,36 @@ Do NOT include introductory text like "Here is the comment:" or similar."""
                 self.logger.warning("Groq client not available")
                 return None
         
-        try:
-            response = self.groq_client.chat.completions.create(
-                model=self.models.get('groq', 'llama3-70b-8192'),
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                max_tokens=500,
-                temperature=0.3
-            )
-            
-            if response.choices and len(response.choices) > 0:
-                return response.choices[0].message.content.strip()
-            
-        except Exception as e:
-            self.logger.warning(f"Groq API call failed: {e}")
+        # Get Groq models - handle both string and list formats
+        groq_models = self.models.get('groq', ['llama3-8b-8192', 'llama3.1-8b-instant', 'llama3-70b-8192'])
+        if isinstance(groq_models, str):
+            groq_models = [groq_models]
         
+        # Try each model in order
+        for model in groq_models:
+            try:
+                self.logger.debug(f"Trying Groq model: {model}")
+                response = self.groq_client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    max_tokens=500,
+                    temperature=0.3
+                )
+                
+                if response.choices and len(response.choices) > 0:
+                    self.logger.debug(f"Groq model {model} succeeded")
+                    return response.choices[0].message.content.strip()
+                
+            except Exception as e:
+                self.logger.warning(f"Groq model {model} failed: {e}")
+                continue
+        
+        self.logger.warning("All Groq models failed")
         return None
     
     def _call_openai(self, prompt: str) -> Optional[str]:
@@ -1127,11 +1138,16 @@ Do NOT include introductory text like "Here is the comment:" or similar."""
         }
         
         # Groq info
+        groq_models = self.models.get('groq', ['llama3-8b-8192', 'llama3.1-8b-instant', 'llama3-70b-8192'])
+        if isinstance(groq_models, str):
+            groq_models = [groq_models]
+        
         info['providers']['groq'] = {
             'available': GROQ_AVAILABLE and bool(self.groq_api_key),
             'requires_key': True,
             'has_key': bool(self.groq_api_key),
-            'model': self.models.get('groq', 'llama3-70b-8192')
+            'models': groq_models,
+            'primary_model': groq_models[0] if groq_models else 'llama3-8b-8192'
         }
         
         # OpenAI info

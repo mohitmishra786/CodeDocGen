@@ -485,7 +485,7 @@ ai:
   retry_delay: 1.0
   models:
     phind: "gpt-3.5-turbo"
-    groq: "llama3-70b-8192"
+    groq: ["llama3-8b-8192", "llama3.1-8b-instant", "llama3-70b-8192"]
     openai: "gpt-4o-mini"
 ```
 
