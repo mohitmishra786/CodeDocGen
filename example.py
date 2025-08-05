@@ -1,582 +1,712 @@
 #!/usr/bin/env python3
 """
-Example usage of CodeDocGen with Language-Aware Comment Detection.
+Enhanced Example for CodeDocGen AI-Powered Documentation Generation.
 
-This script demonstrates how to use the CodeDocGen library
-to generate documentation for code files with comprehensive
-language-aware comment detection that prevents duplicate documentation.
+This script demonstrates advanced usage of CodeDocGen with AI-powered
+comment generation, featuring complex algorithms and data structures.
 """
 
 import tempfile
 import os
+import json
+import hashlib
+import re
 from pathlib import Path
+from typing import List, Dict, Optional, Tuple, Union
+from datetime import datetime, timedelta
+from collections import defaultdict, Counter
+import math
+import statistics
+from dataclasses import dataclass
+from enum import Enum
+
+# Import CodeDocGen modules
 from code_doc_gen import generate_docs, generate_cpp_docs, generate_python_docs
 
 
-def create_sample_files():
-    """Create sample code files for demonstration."""
-    sample_dir = Path("sample_code")
+class SortAlgorithm(Enum):
+    """Enumeration of available sorting algorithms."""
+    BUBBLE = "bubble"
+    QUICK = "quick"
+    MERGE = "merge"
+    HEAP = "heap"
+    INSERTION = "insertion"
+
+
+@dataclass
+class DataPoint:
+    """Represents a single data point with timestamp and value."""
+    timestamp: datetime
+    value: float
+    metadata: Dict[str, str]
+
+
+def quicksort_algorithm(arr: List[int], low: int = None, high: int = None) -> List[int]:
+    """Implement quicksort algorithm with optimized pivot selection."""
+    if low is None:
+        low = 0
+    if high is None:
+        high = len(arr) - 1
+    
+    if low < high:
+        pivot_index = _median_of_three(arr, low, high)
+        arr[high], arr[pivot_index] = arr[pivot_index], arr[high]
+        
+        pivot = _partition(arr, low, high)
+        quicksort_algorithm(arr, low, pivot - 1)
+        quicksort_algorithm(arr, pivot + 1, high)
+    
+    return arr
+
+
+def _median_of_three(arr: List[int], low: int, high: int) -> int:
+    """Select pivot using median-of-three strategy."""
+    mid = (low + high) // 2
+    
+    if arr[low] > arr[mid]:
+        arr[low], arr[mid] = arr[mid], arr[low]
+    if arr[low] > arr[high]:
+        arr[low], arr[high] = arr[high], arr[low]
+    if arr[mid] > arr[high]:
+        arr[mid], arr[high] = arr[high], arr[mid]
+    
+    return mid
+
+
+def _partition(arr: List[int], low: int, high: int) -> int:
+    """Partition array around pivot element."""
+    pivot = arr[high]
+    i = low - 1
+    
+    for j in range(low, high):
+        if arr[j] <= pivot:
+            i += 1
+            arr[i], arr[j] = arr[j], arr[i]
+    
+    arr[i + 1], arr[high] = arr[high], arr[i + 1]
+    return i + 1
+
+
+def fibonacci_memoization(n: int, memo: Dict[int, int] = None) -> int:
+    """Calculate Fibonacci number using memoization for optimization."""
+    if memo is None:
+        memo = {}
+    
+    if n in memo:
+        return memo[n]
+    
+    if n <= 1:
+        return n
+    
+    memo[n] = fibonacci_memoization(n - 1, memo) + fibonacci_memoization(n - 2, memo)
+    return memo[n]
+
+
+def dijkstra_shortest_path(graph: Dict[int, List[Tuple[int, float]]], 
+                          start: int, 
+                          end: int) -> Tuple[List[int], float]:
+    """Find shortest path using Dijkstra's algorithm."""
+    import heapq
+    
+    distances = {node: float('infinity') for node in graph}
+    distances[start] = 0
+    previous = {node: None for node in graph}
+    pq = [(0, start)]
+    
+    while pq:
+        current_distance, current_node = heapq.heappop(pq)
+        
+        if current_distance > distances[current_node]:
+            continue
+        
+        if current_node == end:
+            break
+        
+        for neighbor, weight in graph[current_node]:
+            distance = current_distance + weight
+            
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+                previous[neighbor] = current_node
+                heapq.heappush(pq, (distance, neighbor))
+    
+    path = []
+    current = end
+    while current is not None:
+        path.append(current)
+        current = previous[current]
+    path.reverse()
+    
+    return path, distances[end]
+
+
+def knapsack_dynamic_programming(weights: List[int], 
+                                values: List[int], 
+                                capacity: int) -> Tuple[int, List[int]]:
+    """Solve 0/1 knapsack problem using dynamic programming."""
+    n = len(weights)
+    dp = [[0] * (capacity + 1) for _ in range(n + 1)]
+    
+    for i in range(1, n + 1):
+        for w in range(capacity + 1):
+            if weights[i - 1] <= w:
+                dp[i][w] = max(dp[i - 1][w], 
+                              dp[i - 1][w - weights[i - 1]] + values[i - 1])
+            else:
+                dp[i][w] = dp[i - 1][w]
+    
+    selected_items = []
+    w = capacity
+    for i in range(n, 0, -1):
+        if dp[i][w] != dp[i - 1][w]:
+            selected_items.append(i - 1)
+            w -= weights[i - 1]
+    
+    return dp[n][capacity], selected_items[::-1]
+
+
+def binary_search_rotated_array(nums: List[int], target: int) -> int:
+    """Search for target in rotated sorted array."""
+    left, right = 0, len(nums) - 1
+    
+    while left <= right:
+        mid = (left + right) // 2
+        
+        if nums[mid] == target:
+            return mid
+        
+        if nums[left] <= nums[mid]:
+            if nums[left] <= target < nums[mid]:
+                right = mid - 1
+            else:
+                left = mid + 1
+        else:
+            if nums[mid] < target <= nums[right]:
+                left = mid + 1
+            else:
+                right = mid - 1
+    
+    return -1
+
+
+def longest_common_subsequence(text1: str, text2: str) -> int:
+    """Find length of longest common subsequence."""
+    m, n = len(text1), len(text2)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if text1[i - 1] == text2[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1] + 1
+            else:
+                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+    
+    return dp[m][n]
+
+
+def rabin_karp_string_matching(text: str, pattern: str, prime: int = 101) -> List[int]:
+    """Find all occurrences of pattern in text using Rabin-Karp algorithm."""
+    def hash_string(s: str) -> int:
+        hash_val = 0
+        for char in s:
+            hash_val = (hash_val * 256 + ord(char)) % prime
+        return hash_val
+    
+    n, m = len(text), len(pattern)
+    if m > n:
+        return []
+    
+    pattern_hash = hash_string(pattern)
+    text_hash = hash_string(text[:m])
+    
+    occurrences = []
+    
+    for i in range(n - m + 1):
+        if pattern_hash == text_hash:
+            if text[i:i + m] == pattern:
+                occurrences.append(i)
+        
+        if i < n - m:
+            text_hash = (text_hash * 256 - ord(text[i]) * pow(256, m, prime) + ord(text[i + m])) % prime
+    
+    return occurrences
+
+
+def merge_k_sorted_lists(lists: List[List[int]]) -> List[int]:
+    """Merge k sorted lists efficiently."""
+    import heapq
+    
+    if not lists:
+        return []
+    
+    heap = []
+    result = []
+    
+    for i, lst in enumerate(lists):
+        if lst:
+            heapq.heappush(heap, (lst[0], i, 0))
+    
+    while heap:
+        val, list_idx, element_idx = heapq.heappop(heap)
+        result.append(val)
+        
+        if element_idx + 1 < len(lists[list_idx]):
+            next_val = lists[list_idx][element_idx + 1]
+            heapq.heappush(heap, (next_val, list_idx, element_idx + 1))
+    
+    return result
+
+
+def find_median_of_two_sorted_arrays(nums1: List[int], nums2: List[int]) -> float:
+    """Find median of two sorted arrays in O(log(min(m,n))) time."""
+    if len(nums1) > len(nums2):
+        nums1, nums2 = nums2, nums1
+    
+    m, n = len(nums1), len(nums2)
+    left, right = 0, m
+    
+    while left <= right:
+        partition_x = (left + right) // 2
+        partition_y = (m + n + 1) // 2 - partition_x
+        
+        max_left_x = float('-inf') if partition_x == 0 else nums1[partition_x - 1]
+        min_right_x = float('inf') if partition_x == m else nums1[partition_x]
+        
+        max_left_y = float('-inf') if partition_y == 0 else nums2[partition_y - 1]
+        min_right_y = float('inf') if partition_y == n else nums2[partition_y]
+        
+        if max_left_x <= min_right_y and max_left_y <= min_right_x:
+            if (m + n) % 2 == 0:
+                return (max(max_left_x, max_left_y) + min(min_right_x, min_right_y)) / 2
+            else:
+                return max(max_left_x, max_left_y)
+        elif max_left_x > min_right_y:
+            right = partition_x - 1
+        else:
+            left = partition_x + 1
+    
+    raise ValueError("Input arrays are not sorted")
+
+
+def word_ladder_bfs(begin_word: str, end_word: str, word_list: List[str]) -> int:
+    """Find shortest transformation sequence from begin to end word."""
+    if end_word not in word_list:
+        return 0
+    
+    word_set = set(word_list)
+    queue = [(begin_word, 1)]
+    visited = {begin_word}
+    
+    while queue:
+        current_word, level = queue.pop(0)
+        
+        if current_word == end_word:
+            return level
+        
+        for i in range(len(current_word)):
+            for c in 'abcdefghijklmnopqrstuvwxyz':
+                next_word = current_word[:i] + c + current_word[i + 1:]
+                
+                if next_word in word_set and next_word not in visited:
+                    visited.add(next_word)
+                    queue.append((next_word, level + 1))
+    
+    return 0
+
+
+def sudoku_solver(board: List[List[str]]) -> bool:
+    """Solve Sudoku puzzle using backtracking."""
+    def is_valid(board: List[List[str]], row: int, col: int, num: str) -> bool:
+        for x in range(9):
+            if board[row][x] == num:
+                return False
+        
+        for x in range(9):
+            if board[x][col] == num:
+                return False
+        
+        start_row, start_col = 3 * (row // 3), 3 * (col // 3)
+        for i in range(3):
+            for j in range(3):
+                if board[i + start_row][j + start_col] == num:
+                    return False
+        
+        return True
+    
+    def solve(board: List[List[str]]) -> bool:
+        for i in range(9):
+            for j in range(9):
+                if board[i][j] == '.':
+                    for num in '123456789':
+                        if is_valid(board, i, j, num):
+                            board[i][j] = num
+                            if solve(board):
+                                return True
+                            board[i][j] = '.'
+                    return False
+        return True
+    
+    return solve(board)
+
+
+def demonstrate_ai_powered_documentation():
+    """Demonstrate AI-powered documentation generation."""
+    print("=== AI-Powered Documentation Generation Demo ===\n")
+    
+    # Create a sample file with complex functions
+    sample_dir = Path("ai_demo")
     sample_dir.mkdir(exist_ok=True)
     
-    # Create a sample C++ file with various comment patterns
-    cpp_file = sample_dir / "math.cpp"
-    cpp_content = """#include <iostream>
-
-// Existing comment above function
-int add(int a, int b) {
-    return a + b;
-}
-
-// Another comment
-float multiply(float x, float y) {
-    return x * y;
-}
-
-// Comment block
-// Multiple lines
-// Of comments
-bool isPositive(int value) {
-    return value > 0;
-}
-
-void inline_commented_func() { // Inline comment
-    std::cout << "Hello" << std::endl;
-}
-
-void next_line_commented_func() {
-    // Comment on next line
-    std::cout << "World" << std::endl;
-}
-
-/* Multi-line comment above function */
-void multi_line_func() {
-    std::cout << "Multi-line" << std::endl;
-}
-
-/** Doxygen comment */
-void doxygen_func() {
-    std::cout << "Doxygen" << std::endl;
-}
-
-/* Another multi-line comment
-   spanning multiple lines */
-void spanning_func() {
-    std::cout << "Spanning" << std::endl;
-}
-
-void no_comment_func() {
-    std::cout << "No comment" << std::endl;
-}
+    # Create a Python file with complex functions
+    complex_file = sample_dir / "complex_algorithms.py"
+    complex_content = '''#!/usr/bin/env python3
 """
-    cpp_file.write_text(cpp_content)
+Complex algorithms and data structures for AI documentation testing.
+"""
+
+import math
+import statistics
+from typing import List, Dict, Optional, Tuple
+from collections import defaultdict
+import heapq
+
+
+def dijkstra_shortest_path(graph: Dict[int, List[Tuple[int, float]]], 
+                          start: int, 
+                          end: int) -> Tuple[List[int], float]:
+    """Find shortest path using Dijkstra's algorithm."""
+    distances = {node: float('infinity') for node in graph}
+    distances[start] = 0
+    previous = {node: None for node in graph}
+    pq = [(0, start)]
     
-    # Create a sample Python file with various comment patterns
-    python_file = sample_dir / "utils.py"
-    python_content = '''#!/usr/bin/env python3
-# Example Python file with various comment patterns
-# This demonstrates the language-aware comment detection system.
+    while pq:
+        current_distance, current_node = heapq.heappop(pq)
+        
+        if current_distance > distances[current_node]:
+            continue
+        
+        if current_node == end:
+            break
+        
+        for neighbor, weight in graph[current_node]:
+            distance = current_distance + weight
+            
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+                previous[neighbor] = current_node
+                heapq.heappush(pq, (distance, neighbor))
+    
+    path = []
+    current = end
+    while current is not None:
+        path.append(current)
+        current = previous[current]
+    path.reverse()
+    
+    return path, distances[end]
 
-# Existing comment above function
-def commented_func():
-    """This function has a docstring"""
-    return True
 
-# Another comment
-@decorator
-def decorated_func():
-    return True
+def knapsack_dynamic_programming(weights: List[int], 
+                                values: List[int], 
+                                capacity: int) -> Tuple[int, List[int]]:
+    """Solve 0/1 knapsack problem using dynamic programming."""
+    n = len(weights)
+    dp = [[0] * (capacity + 1) for _ in range(n + 1)]
+    
+    for i in range(1, n + 1):
+        for w in range(capacity + 1):
+            if weights[i - 1] <= w:
+                dp[i][w] = max(dp[i - 1][w], 
+                              dp[i - 1][w - weights[i - 1]] + values[i - 1])
+            else:
+                dp[i][w] = dp[i - 1][w]
+    
+    selected_items = []
+    w = capacity
+    for i in range(n, 0, -1):
+        if dp[i][w] != dp[i - 1][w]:
+            selected_items.append(i - 1)
+            w -= weights[i - 1]
+    
+    return dp[n][capacity], selected_items[::-1]
 
-# Comment block
-# Multiple lines
-# Of comments
-def multi_line_commented_func():
-    return True
 
-def inline_commented_func():  # Inline comment
-    return True
+def binary_search_rotated_array(nums: List[int], target: int) -> int:
+    """Search for target in rotated sorted array."""
+    left, right = 0, len(nums) - 1
+    
+    while left <= right:
+        mid = (left + right) // 2
+        
+        if nums[mid] == target:
+            return mid
+        
+        if nums[left] <= nums[mid]:
+            if nums[left] <= target < nums[mid]:
+                right = mid - 1
+            else:
+                left = mid + 1
+        else:
+            if nums[mid] < target <= nums[right]:
+                left = mid + 1
+            else:
+                right = mid - 1
+    
+    return -1
 
-def next_line_commented_func():
-    # Comment on next line
-    return True
 
-"""Docstring above function"""
-def docstring_func():
-    return True
+def longest_common_subsequence(text1: str, text2: str) -> int:
+    """Find length of longest common subsequence."""
+    m, n = len(text1), len(text2)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if text1[i - 1] == text2[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1] + 1
+            else:
+                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+    
+    return dp[m][n]
 
-"""Another docstring"""
-@decorator
-def decorated_with_docstring():
-    return True
 
-def no_comment_func():
-    return True
+def rabin_karp_string_matching(text: str, pattern: str, prime: int = 101) -> List[int]:
+    """Find all occurrences of pattern in text using Rabin-Karp algorithm."""
+    def hash_string(s: str) -> int:
+        hash_val = 0
+        for char in s:
+            hash_val = (hash_val * 256 + ord(char)) % prime
+        return hash_val
+    
+    n, m = len(text), len(pattern)
+    if m > n:
+        return []
+    
+    pattern_hash = hash_string(pattern)
+    text_hash = hash_string(text[:m])
+    
+    occurrences = []
+    
+    for i in range(n - m + 1):
+        if pattern_hash == text_hash:
+            if text[i:i + m] == pattern:
+                occurrences.append(i)
+        
+        if i < n - m:
+            text_hash = (text_hash * 256 - ord(text[i]) * pow(256, m, prime) + ord(text[i + m])) % prime
+    
+    return occurrences
 
-def validate_email(email):
-    if '@' not in email:
-        raise ValueError("Invalid email format")
-    return True
 
-def get_user_info(user_id):
-    return {"id": user_id, "name": "John Doe"}
+def merge_k_sorted_lists(lists: List[List[int]]) -> List[int]:
+    """Merge k sorted lists efficiently."""
+    if not lists:
+        return []
+    
+    heap = []
+    result = []
+    
+    for i, lst in enumerate(lists):
+        if lst:
+            heapq.heappush(heap, (lst[0], i, 0))
+    
+    while heap:
+        val, list_idx, element_idx = heapq.heappop(heap)
+        result.append(val)
+        
+        if element_idx + 1 < len(lists[list_idx]):
+            next_val = lists[list_idx][element_idx + 1]
+            heapq.heappush(heap, (next_val, list_idx, element_idx + 1))
+    
+    return result
 
-def compute_average(numbers):
-    if not numbers:
+
+def find_median_of_two_sorted_arrays(nums1: List[int], nums2: List[int]) -> float:
+    """Find median of two sorted arrays in O(log(min(m,n))) time."""
+    if len(nums1) > len(nums2):
+        nums1, nums2 = nums2, nums1
+    
+    m, n = len(nums1), len(nums2)
+    left, right = 0, m
+    
+    while left <= right:
+        partition_x = (left + right) // 2
+        partition_y = (m + n + 1) // 2 - partition_x
+        
+        max_left_x = float('-inf') if partition_x == 0 else nums1[partition_x - 1]
+        min_right_x = float('inf') if partition_x == m else nums1[partition_x]
+        
+        max_left_y = float('-inf') if partition_y == 0 else nums2[partition_y - 1]
+        min_right_y = float('inf') if partition_y == n else nums2[partition_y]
+        
+        if max_left_x <= min_right_y and max_left_y <= min_right_x:
+            if (m + n) % 2 == 0:
+                return (max(max_left_x, max_left_y) + min(min_right_x, min_right_y)) / 2
+            else:
+                return max(max_left_x, max_left_y)
+        elif max_left_x > min_right_y:
+            right = partition_x - 1
+        else:
+            left = partition_x + 1
+    
+    raise ValueError("Input arrays are not sorted")
+
+
+def word_ladder_bfs(begin_word: str, end_word: str, word_list: List[str]) -> int:
+    """Find shortest transformation sequence from begin to end word."""
+    if end_word not in word_list:
         return 0
-    return sum(numbers) / len(numbers)
+    
+    word_set = set(word_list)
+    queue = [(begin_word, 1)]
+    visited = {begin_word}
+    
+    while queue:
+        current_word, level = queue.pop(0)
+        
+        if current_word == end_word:
+            return level
+        
+        for i in range(len(current_word)):
+            for c in 'abcdefghijklmnopqrstuvwxyz':
+                next_word = current_word[:i] + c + current_word[i + 1:]
+                
+                if next_word in word_set and next_word not in visited:
+                    visited.add(next_word)
+                    queue.append((next_word, level + 1))
+    
+    return 0
 
-def is_valid_password(password):
-    return len(password) >= 8
 
-def process_data(data):
-    # This function calls other functions - these should NOT get comments
-    result = validate_email(data.get('email', ''))
-    user = get_user_info(data.get('user_id'))
-    avg = compute_average(data.get('scores', []))
-    return {
-        'valid': result,
-        'user': user,
-        'average': avg
-    }
-
-def main():
-    # This function also calls other functions
-    data = {
-        'email': 'test@example.com',
-        'user_id': 123,
-        'scores': [85, 90, 78, 92]
-    }
-    
-    # These function calls should NOT get comments
-    result = process_data(data)
-    print(f"Processed: {result}")
-    
-    # Test password validation
-    is_valid = is_valid_password("secure123")
-    print(f"Password valid: {is_valid}")
-'''
-    python_file.write_text(python_content)
-    
-    # Create a sample Python file with class methods
-    class_file = sample_dir / "class_example.py"
-    class_content = '''#!/usr/bin/env python3
-# Example Python class with various comment patterns
-# This demonstrates comment detection with class methods.
-
-# Comment above class
-class Calculator:
-    # Comment above method
-    def __init__(self, initial_value=0):
-        self.value = initial_value
-    
-    def add(self, x):  # Inline comment
-        self.value += x
-        return self.value
-    
-    def subtract(self, x):
-        # Comment inside method
-        self.value -= x
-        return self.value
-    
-    """Docstring above method"""
-    def multiply(self, x):
-        self.value *= x
-        return self.value
-    
-    def get_value(self):
-        return self.value
-
-class DataProcessor:
-    def process_data(self, data):
-        # This should NOT get a comment - it's a function call
-        result = self.validate_data(data)
-        return result
-    
-    def validate_data(self, data):
-        if not data:
-            return False
+def sudoku_solver(board: List[List[str]]) -> bool:
+    """Solve Sudoku puzzle using backtracking."""
+    def is_valid(board: List[List[str]], row: int, col: int, num: str) -> bool:
+        for x in range(9):
+            if board[row][x] == num:
+                return False
+        
+        for x in range(9):
+            if board[x][col] == num:
+                return False
+        
+        start_row, start_col = 3 * (row // 3), 3 * (col // 3)
+        for i in range(3):
+            for j in range(3):
+                if board[i + start_row][j + start_col] == num:
+                    return False
+        
         return True
+    
+    def solve(board: List[List[str]]) -> bool:
+        for i in range(9):
+            for j in range(9):
+                if board[i][j] == '.':
+                    for num in '123456789':
+                        if is_valid(board, i, j, num):
+                            board[i][j] = num
+                            if solve(board):
+                                return True
+                            board[i][j] = '.'
+                    return False
+        return True
+    
+    return solve(board)
 '''
-    class_file.write_text(class_content)
+    
+    complex_file.write_text(complex_content)
+    
+    print("Created complex algorithms file for AI testing.")
+    print("This file contains advanced algorithms that will benefit from AI-generated comments.")
     
     return sample_dir
 
 
-def create_sample_files_with_existing_docs():
-    """Create sample files with existing documentation to test the fix."""
-    sample_dir = Path("sample_code")
-    sample_dir.mkdir(exist_ok=True)
+def test_ai_documentation_generation():
+    """Test AI-powered documentation generation."""
+    print("\n=== Testing AI Documentation Generation ===\n")
     
-    # Create a Python file with existing docstrings
-    existing_docs_file = sample_dir / "existing_docs.py"
-    existing_docs_content = '''#!/usr/bin/env python3
-"""
-Test Real Repository Animation
-
-This script tests our ManimGL system with real GitHub repositories
-to generate animations from actual code.
-"""
-
-import os
-import sys
-import logging
-from pathlib import Path
-import argparse
-
-# Add current directory to path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-# Import logging utilities
-from advanced_animation.utils.logging_config import setup_logging_for_run, get_logger
-
-# Setup logging for this run
-logging_manager = setup_logging_for_run("logs", logging.INFO)
-logger = get_logger(__name__)
-
-from advanced_animation import AdvancedAnimationSystem
-from code_analysis import EnhancedCodeAnalyzer
-from repo_fetcher import RepoFetcher
-import tempfile
-import subprocess
-
-def fetch_repository(repo_url: str) -> str:
-    """Wrapper function to fetch a repository."""
-    # Create a temporary directory for the repository
-    temp_dir = tempfile.mkdtemp(prefix="repo_")
+    # Create demo directory
+    demo_dir = demonstrate_ai_powered_documentation()
     
-    # Clone the repository using git
+    # Test with AI enabled
+    print("1. Testing with AI enabled (Phind with Groq fallback):")
     try:
-        subprocess.run(["git", "clone", repo_url, temp_dir], check=True, capture_output=True)
-        return temp_dir
-    except subprocess.CalledProcessError as e:
-        raise ValueError(f"Failed to clone repository: {e}")
-
-def analyze_repository(repo_path: str):
-    """Wrapper function to analyze a repository."""
-    analyzer = EnhancedCodeAnalyzer(repo_path)
-    return analyzer.analyze_project()
-
-def analyze_github_repo(repo_url: str, output_dir: str = "real_repo_output"):
-    """Analyze a GitHub repository and create animations."""
-    print(f"🎬 Testing Real Repository: {repo_url}")
-    print("=" * 60)
-    
-    try:
-        # Initialize the advanced animation system
-        system = AdvancedAnimationSystem(output_dir=output_dir)
+        results = generate_docs(demo_dir, lang="python", inplace=True, 
+                              enable_ai=True, ai_provider="phind")
+        print("✅ AI documentation generation completed!")
         
-        # Fetch and analyze the repository
-        print("📥 Fetching repository...")
-        repo_path = fetch_repository(repo_url)
-        print(f"✅ Repository fetched to: {repo_path}")
-        
-        print("\\n🔍 Analyzing repository...")
-        code_analysis = analyze_repository(repo_path)
-        print(f"✅ Analysis complete: {len(code_analysis.get('files', []))} files analyzed")
-        
-        return True
+        # Show some results
+        complex_file = demo_dir / "complex_algorithms.py"
+        if complex_file.exists():
+            print(f"\n--- Generated documentation for {complex_file} ---")
+            with open(complex_file, 'r') as f:
+                content = f.read()
+                # Show first few functions with their documentation
+                lines = content.split('\n')
+                for i, line in enumerate(lines):
+                    if line.strip().startswith('def ') and '"""' in line:
+                        # Show function and its docstring
+                        func_start = i
+                        while func_start > 0 and not lines[func_start-1].strip().startswith('"""'):
+                            func_start -= 1
+                        
+                        func_end = i + 1
+                        while func_end < len(lines) and not lines[func_end].strip().startswith('"""'):
+                            func_end += 1
+                        
+                        print('\n'.join(lines[func_start:func_end+1]))
+                        print('-' * 50)
+                        break
         
     except Exception as e:
-        print(f"❌ Error processing repository: {e}")
-        return False
-
-class StoryboardManager:
-    @staticmethod
-    def save_storyboard(storyboard, output_path: str) -> str:
-        try:
-            # Convert storyboard to JSON and save
-            import json
-            with open(output_path, 'w') as f:
-                json.dump(storyboard.__dict__, f, indent=2)
-            return output_path
-        except Exception as e:
-            raise IOError(f"Failed to save storyboard: {e}")
+        print(f"❌ AI documentation generation failed: {e}")
+        print("This is expected if AI services are not available.")
     
-    @staticmethod
-    def load_storyboard(file_path: str):
-        """Load storyboard from JSON file."""
-        try:
-            import json
-            with open(file_path, 'r') as f:
-                data = json.load(f)
-            return data
-        except Exception as e:
-            raise IOError(f"Failed to load storyboard: {e}")
+    # Test without AI (fallback to NLTK)
+    print("\n2. Testing without AI (NLTK fallback):")
+    try:
+        # Create a copy for testing
+        test_dir = Path("ai_test_fallback")
+        test_dir.mkdir(exist_ok=True)
+        
+        # Copy the complex file
+        import shutil
+        shutil.copy(demo_dir / "complex_algorithms.py", test_dir / "complex_algorithms.py")
+        
+        results = generate_docs(test_dir, lang="python", inplace=True, 
+                              enable_ai=False)
+        print("✅ NLTK fallback documentation generation completed!")
+        
+    except Exception as e:
+        print(f"❌ NLTK fallback failed: {e}")
+
 
 def main():
-    """Main function."""
-    parser = argparse.ArgumentParser(description="Test ManimGL system with real repositories")
-    parser.add_argument("repo_url", help="GitHub repository URL (e.g., https://github.com/user/repo)")
-    parser.add_argument("--output", "-o", default="real_repo_output", 
-                       help="Output directory (default: real_repo_output)")
+    """Main function to run the enhanced demonstration."""
+    print("=== Enhanced CodeDocGen AI-Powered Documentation Demo ===\n")
     
-    args = parser.parse_args()
-    
-    # Validate repository URL
-    if not args.repo_url.startswith("https://github.com/"):
-        print("❌ Please provide a valid GitHub repository URL")
-        return
-    
-    # Process the repository
-    success = analyze_github_repo(args.repo_url, args.output)
-    
-    if success:
-        print("\\n🎊 Repository animation test completed successfully!")
-    else:
-        print("\\n⚠️ Some issues encountered. Check the logs above.")
-
-if __name__ == "__main__":
-    main()
-'''
-    existing_docs_file.write_text(existing_docs_content)
-    
-    return sample_dir
-
-
-def demonstrate_language_aware_comment_detection():
-    """Demonstrate the language-aware comment detection functionality."""
-    print("=== Language-Aware Comment Detection Demo ===\n")
-    
-    # Create sample files
-    sample_dir = create_sample_files()
-    
-    print("1. Testing Python Comment Detection Patterns:")
-    print("   - Single-line comments (#)")
-    print("   - Docstrings (\"\"\" and ''')")
-    print("   - Decorators with comments")
-    print("   - Comment blocks")
-    print("   - Inline comments")
-    print("   - Next-line comments")
-    print("   - Functions without comments")
-    
-    print("\n2. Testing C++ Comment Detection Patterns:")
-    print("   - Single-line comments (//)")
-    print("   - Multi-line comments (/* */)")
-    print("   - Doxygen comments (/** */)")
-    print("   - Contiguous comment blocks")
-    print("   - Inline comments")
-    print("   - Next-line comments")
-    print("   - Functions without comments")
-    
-    print("\n3. Testing Language Inference:")
-    print("   - .py files → Python")
-    print("   - .cpp, .h, .hpp files → C++")
-    print("   - .java files → Java")
-    print("   - Other extensions → Unknown")
-    
-    print("\n4. Testing Edge Cases:")
-    print("   - Comments between functions")
-    print("   - Empty lines")
-    print("   - Mixed content")
-    print("   - Unknown languages")
-    
-    return sample_dir
-
-
-def demonstrate_library_usage():
-    """Demonstrate the library usage with language-aware features."""
-    print("=== CodeDocGen Library Usage Example ===\n")
-    
-    # Create sample files
-    sample_dir = demonstrate_language_aware_comment_detection()
-    
-    # Example 1: Generate documentation for Python files
-    print("\n1. Generating documentation for Python files:")
-    results = generate_python_docs(sample_dir, inplace=False)
-    
-    for file_path, doc_strings in results.items():
-        print(f"\nFile: {file_path}")
-        for func_name, doc_string in doc_strings.items():
-            print(f"\nFunction: {func_name}")
-            print(doc_string)
-    
-    # Example 2: Generate documentation for C++ files
-    print("\n\n2. Generating documentation for C++ files:")
-    results = generate_cpp_docs(sample_dir, inplace=False)
-    
-    for file_path, doc_strings in results.items():
-        print(f"\nFile: {file_path}")
-        for func_name, doc_string in doc_strings.items():
-            print(f"\nFunction: {func_name}")
-            print(doc_string)
-    
-    # Example 3: Generate documentation with custom output
-    print("\n\n3. Generating documentation to output directory:")
-    output_dir = Path("generated_docs")
-    # Generate Python docs
-    generate_docs(sample_dir, lang="python", output_dir=output_dir)
-    # Generate C++ docs
-    generate_docs(sample_dir, lang="c++", output_dir=output_dir)
-    print(f"Documentation written to: {output_dir}")
-    
-    # Example 4: Show diff without applying changes
-    print("\n\n4. Showing diff of changes:")
-    for file_path in sample_dir.glob("*.py"):
-        results = generate_python_docs(sample_dir, files=[file_path.name], inplace=False)
-        if results:
-            from code_doc_gen.generator import DocumentationGenerator
-            from code_doc_gen.config import Config
-            
-            config = Config()
-            generator = DocumentationGenerator(config)
-            
-            for file_path_str, doc_strings in results.items():
-                diff = generator.generate_diff(Path(file_path_str), doc_strings)
-                if diff:
-                    print(f"\n--- Diff for {file_path_str} ---")
-                    print(diff)
-    
-    # Cleanup
-    # print("\n\n=== Cleanup ===")
-    # print("Removing sample files...")
-    # import shutil
-    # shutil.rmtree(sample_dir)
-    # if output_dir.exists():
-    #     shutil.rmtree(output_dir)
-    # print("Cleanup complete!")
-
-
-def demonstrate_cli_usage():
-    """Demonstrate CLI usage instructions."""
-    print("\n=== CLI Usage Examples ===\n")
-    
-    print("To use the command-line interface:")
-    print()
-    print("1. Generate documentation for a C++ repository:")
-    print("   code_doc_gen --repo /path/to/cpp/repo --lang c++ --inplace")
-    print()
-    print("2. Generate documentation for Python files with custom output:")
-    print("   code_doc_gen --repo /path/to/python/repo --lang python --output-dir ./docs")
-    print()
-    print("3. Use custom configuration:")
-    print("   code_doc_gen --repo /path/to/repo --lang java --config custom_rules.yaml")
-    print()
-    print("4. Process specific files only:")
-    print("   code_doc_gen --repo /path/to/repo --lang python --files src/main.py src/utils.py")
-    print()
-    print("5. Show diff without applying changes:")
-    print("   code_doc_gen --repo /path/to/repo --lang c++ --diff")
-    print()
-    print("6. Enable verbose logging:")
-    print("   code_doc_gen --repo /path/to/repo --lang python --verbose")
-
-
-def print_file_contents(file_path):
-    """Print the contents of a file."""
-    print(f"\n--- {file_path} ---")
-    with open(file_path, "r", encoding="utf-8") as f:
-        print(f.read())
-
-
-def demonstrate_existing_documentation_fix():
-    """Demonstrate that the tool doesn't break existing documentation."""
-    print("\n=== Testing Existing Documentation Preservation ===")
-    
-    # Create sample files with existing documentation
-    sample_dir = create_sample_files_with_existing_docs()
-    
-    # Test in-place documentation generation
-    print("Testing in-place documentation generation on files with existing docs...")
-    generate_docs(sample_dir, lang="python", inplace=True)
-    
-    # Show the results
-    print("\n--- existing_docs.py (after processing) ---")
-    print_file_contents(sample_dir / "existing_docs.py")
-    
-    print("\n✅ Test completed: Existing documentation should be preserved!")
-
-
-def demonstrate_inplace_for_all_languages():
-    """Demonstrate in-place documentation for all languages."""
-    sample_dir = Path("sample_code")
-    
-    # In-place for Python
-    print("=== In-place documentation for Python ===")
-    generate_docs(sample_dir, lang="python", inplace=True)
-    print_file_contents(sample_dir / "utils.py")
-    
-    # Test class methods
-    print("\n=== In-place documentation for Python Classes ===")
-    print_file_contents(sample_dir / "class_example.py")
-
-    # In-place for C++ (also works for .c files)
-    print("\n=== In-place documentation for C++ ===")
-    generate_docs(sample_dir, lang="c++", inplace=True)
-    print_file_contents(sample_dir / "math.cpp")
-
-    # If you have Java files, do the same:
-    # print("\n=== In-place documentation for Java ===")
-    # generate_docs(sample_dir, lang="java", inplace=True)
-    # print_file_contents(sample_dir / "Example.java")
-
-
-def demonstrate_comment_detection_edge_cases():
-    """Demonstrate edge cases in comment detection."""
-    print("\n=== Comment Detection Edge Cases ===")
-    
-    sample_dir = Path("sample_code")
-    sample_dir.mkdir(exist_ok=True)
-    
-    # Create a file with comments between functions
-    edge_case_file = sample_dir / "edge_cases.py"
-    edge_case_content = '''#!/usr/bin/env python3
-"""
-Edge case testing for comment detection.
-"""
-
-# Comment for func1
-def func1():
-    pass
-
-def func2():
-    pass
-
-def func3():
-    pass
-
-# This comment should NOT be detected for func3
-# because there are functions between it and func3
-'''
-    edge_case_file.write_text(edge_case_content)
-    
-    print("Created edge case file with comments between functions.")
-    print("The tool should correctly identify which comments belong to which functions.")
-
-
-def demo():
-    """Run the complete demonstration."""
-    print("=== CodeDocGen Language-Aware Comment Detection Demo ===\n")
-    
-    # 1. Demonstrate language-aware comment detection
-    demonstrate_language_aware_comment_detection()
-    
-    # 2. Demonstrate library usage
-    demonstrate_library_usage()
-    
-    # 3. Test existing documentation preservation
-    demonstrate_existing_documentation_fix()
-    
-    # 4. Test in-place documentation
-    demonstrate_inplace_for_all_languages()
-    
-    # 5. Test comment detection edge cases
-    demonstrate_comment_detection_edge_cases()
-    
-    # 6. Show CLI usage
-    demonstrate_cli_usage()
+    # Test AI documentation generation
+    test_ai_documentation_generation()
     
     print("\n=== Summary ===")
-    print("✅ Language-aware comment detection working correctly")
-    print("✅ Existing documentation preserved")
-    print("✅ No duplicate documentation generated")
-    print("✅ All comment patterns detected properly")
-    print("✅ Edge cases handled correctly")
+    print("✅ Enhanced example with complex algorithms created")
+    print("✅ AI-powered documentation generation tested")
+    print("✅ Fallback mechanism tested")
+    print("✅ Complex functions that benefit from AI analysis included")
+    
+    print("\n=== Usage Examples ===")
+    print("To test AI documentation generation:")
+    print("python -m code_doc_gen.main --repo . --files ai_demo/complex_algorithms.py --enable-ai --ai-provider phind --inplace")
+    print()
+    print("To test with Groq fallback:")
+    print("python -m code_doc_gen.main --repo . --files ai_demo/complex_algorithms.py --enable-ai --ai-provider groq --inplace")
 
 
 if __name__ == "__main__":
     try:
-        demo()
+        main()
     except Exception as e:
         print(f"Error: {e}")
         print("Make sure you have installed the required dependencies:")
-        print("pip install -r requirements.txt")
-        print("python -c \"import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger')\"") 
+        print("pip install -r requirements.txt") 

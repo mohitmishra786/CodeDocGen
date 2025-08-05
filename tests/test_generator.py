@@ -6,7 +6,7 @@ import pytest
 from pathlib import Path
 from code_doc_gen.generator import DocumentationGenerator
 from code_doc_gen.config import Config
-from code_doc_gen.models import Function, Parameter, Exception
+from code_doc_gen.models import Function, Parameter, FunctionException
 
 
 class TestDocumentationGenerator:
@@ -401,7 +401,7 @@ def no_comment_func():
         test_file.write_text(test_content)
         
         # Create function for documentation
-        func = Function(name="no_comment_func", return_type="None")
+        func = Function(name="no_comment_func", parameters=[], return_type="None")
         documentation = generator.generate_documentation([func], "python")
         
         # Apply documentation
@@ -425,7 +425,7 @@ void no_comment_func() {
         test_file.write_text(test_content)
         
         # Create function for documentation
-        func = Function(name="no_comment_func", return_type="void")
+        func = Function(name="no_comment_func", parameters=[], return_type="void")
         documentation = generator.generate_documentation([func], "c++")
         
         # Apply documentation
@@ -449,7 +449,7 @@ def no_comment_func():
         test_file.write_text(test_content)
         
         # Create function for documentation
-        func = Function(name="no_comment_func", return_type="None")
+        func = Function(name="no_comment_func", parameters=[], return_type="None")
         documentation = generator.generate_documentation([func], "python")
         
         # Apply documentation
@@ -525,7 +525,7 @@ def no_comment_func():
     
     def test_generate_return_documentation_void(self, generator):
         """Test return documentation generation for void functions."""
-        void_function = Function(name="print", return_type="void")
+        void_function = Function(name="print", parameters=[], return_type="void")
         doc = generator._generate_return_documentation(void_function, "c++")
         
         assert doc is None
@@ -533,7 +533,7 @@ def no_comment_func():
     def test_generate_return_description(self, generator):
         """Test return description generation."""
         # Test different return types
-        function = Function(name="test", return_type="int")
+        function = Function(name="test", parameters=[], return_type="int")
         desc = generator._generate_return_description(function)
         assert "integer" in desc.lower()
         
@@ -553,10 +553,11 @@ def no_comment_func():
         """Test exception documentation generation."""
         function = Function(
             name="divide",
+            parameters=[],
             return_type="float",
             exceptions=[
-                Exception(name="ZeroDivisionError"),
-                Exception(name="ValueError")
+                FunctionException(name="ZeroDivisionError"),
+                FunctionException(name="ValueError")
             ]
         )
         
@@ -571,9 +572,10 @@ def no_comment_func():
         """Test exception documentation text generation."""
         function = Function(
             name="divide",
+            parameters=[],
             return_type="float",
             exceptions=[
-                Exception(name="ZeroDivisionError")
+                FunctionException(name="ZeroDivisionError")
             ]
         )
         

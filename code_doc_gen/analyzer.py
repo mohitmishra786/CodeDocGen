@@ -15,21 +15,25 @@ from nltk import pos_tag
 from .models import Function, Parameter, FunctionBody, FunctionException
 from .config import Config
 from .ast_analyzer import ASTAnalyzer
+from .ai_analyzer import AIAnalyzer
+import logging
 
 
 class IntelligentAnalyzer:
-    """Intelligent analyzer using NLP and AST analysis for context-aware descriptions."""
+    """Intelligent analyzer that uses AI, NLTK, and regex-based analysis."""
     
     def __init__(self, config: Config):
-        """
-        Initialize the intelligent analyzer.
-        
-        Args:
-            config: Configuration object
-        """
         self.config = config
-        self._ensure_nltk_resources()
+        self.logger = logging.getLogger(__name__)
+        
+        # Initialize AI analyzer if enabled
+        self.ai_analyzer = AIAnalyzer(config) if config.get_ai_config().get('enabled', False) else None
+        
+        # Initialize AST analyzer
         self.ast_analyzer = ASTAnalyzer()
+        
+        # Ensure NLTK resources are available
+        self._ensure_nltk_resources()
         
         # Patterns for function name analysis
         self.camel_case_pattern = re.compile(r'([A-Z][a-z0-9]+)')
@@ -44,22 +48,58 @@ class IntelligentAnalyzer:
             except LookupError:
                 nltk.download(resource, quiet=True)
     
-    def analyze_function(self, function: Function) -> None:
+    def analyze_function(self, function: Function, language: str = "python") -> None:
         """
-        Analyze a function using NLP and AST analysis.
+        Analyze a function and generate documentation.
         
         Args:
             function: Function to analyze
+            language: Programming language for AI analysis
         """
-        # Generate intelligent brief description
-        function.brief_description = self._generate_intelligent_description(function)
+        # Check if function already has documentation using enhanced detection
+        if self._has_existing_documentation(function, language) or self.has_existing_documentation(function.source_code, language):
+            self.logger.debug(f"Function {function.name} already has documentation, skipping")
+            return  # Skip if already documented
         
-        # Generate detailed description
-        function.detailed_description = self._generate_detailed_description(function)
+        self.logger.debug(f"=== Analyzing function: {function.name} ===")
         
-        # Analyze function body using AST
-        if function.ast_node:
-            self._analyze_function_ast(function)
+        # Try AI analysis first if enabled
+        if self.ai_analyzer:
+            ai_comment = self.ai_analyzer.analyze_function(function, language)
+            
+            if ai_comment:
+                self.logger.debug(f"AI generated comment for {function.name}: {ai_comment}")
+                function.brief_description = ai_comment
+                return
+        
+        self.logger.debug(f"AI analysis failed for {function.name}, falling back to NLTK")
+        
+        # Fallback to NLTK analysis
+        try:
+            # Generate description using NLTK
+            description = self._generate_intelligent_description(function)
+            if description:
+                # Store the raw description - let the documentation generator format it
+                function.brief_description = description
+                self.logger.debug(f"NLTK generated description for {function.name}: {description}")
+            
+            # Generate parameter descriptions
+            for param in function.parameters:
+                param_desc = self._generate_parameter_description(param)
+                if param_desc:
+                    param.description = param_desc
+                    self.logger.debug(f"NLTK generated param description for {param.name}: {param_desc}")
+                    
+        except Exception as e:
+            self.logger.warning(f"NLTK analysis failed for function {function.name}: {e}")
+            
+            # Final fallback to basic description
+            try:
+                basic_comment = f"Function {function.name}"
+                function.brief_description = basic_comment
+                self.logger.debug(f"Basic comment for {function.name}: {basic_comment}")
+            except Exception as e2:
+                self.logger.warning(f"Basic analysis also failed for function {function.name}: {e2}")
     
     def _generate_intelligent_description(self, function: Function) -> str:
         """
@@ -84,6 +124,96 @@ class IntelligentAnalyzer:
         description = self._construct_description(verb, obj, characteristics, pattern)
         
         return description.capitalize()
+    
+    def _has_existing_documentation(self, function: Function, language: str) -> bool:
+        """
+        Check if a function already has documentation.
+        
+        Args:
+            function: Function to check
+            language: Programming language
+            
+        Returns:
+            True if function already has documentation, False otherwise
+        """
+        if not function.source_code:
+            return False
+        
+        # Get the lines before the function definition
+        lines = function.source_code.split('\n')
+        function_line_idx = -1
+        
+        # Find the function definition line
+        for i, line in enumerate(lines):
+            if function.name in line and ('def ' in line or 'function ' in line or 
+                                        language in ['c++', 'java'] and ('(' in line and ')' in line)):
+                function_line_idx = i
+                break
+        
+        if function_line_idx == -1:
+            return False
+        
+        # Check for documentation in the lines before the function
+        # Only check the immediate lines before the function (not file-level docstrings)
+        start_check = max(0, function_line_idx - 3)  # Only check 3 lines before
+        
+        for i in range(start_check, function_line_idx):
+            line = lines[i].strip()
+            
+            if language == 'python':
+                if line.startswith('"""') or line.startswith("'''") or line.startswith('#'):
+                    # Check if this is a file-level docstring (at the very beginning)
+                    if i < 5:  # If it's in the first few lines, it might be file-level
+                        # Check if there are any other functions before this one
+                        has_other_functions = False
+                        for j in range(i):
+                            if 'def ' in lines[j]:
+                                has_other_functions = True
+                                break
+                        if not has_other_functions:
+                            # This is likely a file-level docstring, not function documentation
+                            continue
+                    return True
+            else:
+                if (line.startswith('/**') or line.startswith('/*') or 
+                    line.startswith('///') or line.startswith('*')):
+                    return True
+                # Don't treat simple // comments as documentation unless they're documentation-specific
+                if line.startswith('//') and any(keyword in line.lower() for keyword in ['@brief', '@param', '@return', 'brief', 'param', 'return']):
+                    return True
+        
+        return False
+    
+    def has_existing_documentation(self, source: str, language: str) -> bool:
+        """
+        Enhanced method to detect existing documentation using comprehensive patterns.
+        
+        Args:
+            source: Source code string
+            language: Programming language
+            
+        Returns:
+            True if documentation exists, False otherwise
+        """
+        patterns = []
+        
+        if language == 'python':
+            patterns = [
+                r'^\s*""".*?"""',     # Python docstrings
+                r'^\s*\'\'\'.*?\'\'\'', # Python docstrings (single quotes)
+                r'^\s*#\s*@',         # Python decorator docs
+                r'^\s*##\s+',         # Common comment format
+            ]
+        else:  # C++/Java
+            patterns = [
+                r'^\s*/\*\*.*?\*/',   # C++/Java doc comments
+                r'^\s*///',           # C++ single-line docs
+                r'^\s*\* @',          # JSDoc-style
+                r'^\s*<!--.*?-->',    # XML comments
+                r'^\s*##\s+',         # Common comment format
+            ]
+        
+        return any(re.search(p, source, re.DOTALL | re.MULTILINE) for p in patterns)
     
     def _parse_function_name(self, name: str) -> Tuple[str, str]:
         """

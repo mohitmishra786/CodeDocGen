@@ -24,7 +24,7 @@ if requirements_path.exists():
 
 setup(
     name="code_doc_gen",
-    version="1.1.0",
+    version="1.1.5",
     author="Mohit Mishra",
     author_email="mohitmishra786687@gmail.com",
     description="Intelligent automatic documentation generation for Python and C++ codebases using AST analysis and NLTK",
@@ -53,6 +53,7 @@ setup(
         "pyyaml>=6.0",
         "pytest>=7.0.0",
         "typing-extensions>=4.0.0",
+        "python-dotenv>=1.0.0",
     ],
     extras_require={
         "dev": [
@@ -69,8 +70,14 @@ setup(
         "cpp": [
             "clang>=6.0.0",
         ],
+        "ai": [
+            "groq>=0.4.0",
+            "openai>=1.0.0",
+        ],
         "all": [
             "clang>=6.0.0",
+            "groq>=0.4.0",
+            "openai>=1.0.0",
         ],
     },
     entry_points={
