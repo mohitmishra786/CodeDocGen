@@ -3,7 +3,7 @@
 ## Release Information
 - **Version**: 1.1.6
 - **Release Date**: August 5, 2025
-- **Status**: Released (TestPyPI Release)
+- **Status**: Released (PyPI Production Release)
 - **GitHub Tag**: v1.1.6
 - **PyPI Package**: code-doc-gen
 - **TestPyPI**: https://test.pypi.org/project/code-doc-gen/1.1.6/
@@ -57,14 +57,14 @@
 
 ## Installation
 
+### From PyPI (Production)
+```bash
+pip install code-doc-gen==1.1.6
+```
+
 ### From TestPyPI (Latest)
 ```bash
 pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.6
-```
-
-### From PyPI (Production - Coming Soon)
-```bash
-pip install code-doc-gen==1.1.6
 ```
 
 ### From Source
@@ -181,6 +181,7 @@ results = generate_docs('/path/to/repo', inplace=True)
 - **Source Distribution**: `code_doc_gen-1.1.6.tar.gz`
 - **Wheel Distribution**: `code_doc_gen-1.1.6-py3-none-any.whl`
 - **GitHub Release**: https://github.com/mohitmishra786/CodeDocGen/releases/tag/v1.1.6
+- **PyPI**: https://pypi.org/project/code-doc-gen/1.1.6/
 - **TestPyPI**: https://test.pypi.org/project/code-doc-gen/1.1.6/
 
 ## Support
