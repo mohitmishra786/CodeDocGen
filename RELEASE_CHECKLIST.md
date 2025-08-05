@@ -1,4 +1,4 @@
-# CodeDocGen v1.1.0 Release Checklist
+# CodeDocGen v1.1.6 Release Checklist
 
 ## Pre-Release Tasks
 
@@ -18,7 +18,7 @@
 
 ### Configuration
 - [x] setup.py updated with correct metadata
-- [x] Version number set to 1.1.0
+- [x] Version number set to 1.1.6
 - [x] Author information updated
 - [x] Package description reflects current capabilities
 - [x] Requirements.txt is current
@@ -40,7 +40,10 @@
 - [x] Context-aware return type descriptions working
 - [x] Behavioral detection (recursion, loops, conditionals) working
 
-### New Features in v1.1.0
+### New Features in v1.1.6
+- [x] Groq model fallback support with multiple models priority
+- [x] Automatic model switching: `llama3-8b-8192` → `llama3.1-8b-instant` → `llama3-70b-8192`
+- [x] Enhanced AI provider configuration with model lists
 - [x] Intelligent comment generation with AST analysis
 - [x] NLTK-powered context-aware parameter descriptions
 - [x] Function-specific return type descriptions
@@ -56,13 +59,16 @@
 
 ### GitHub Release
 1. [x] Create a new release on GitHub
-2. [x] Tag: v1.1.0
-3. [x] Title: CodeDocGen v1.1.0 - Intelligent Comment Generation with AST Analysis and NLTK
+2. [x] Tag: v1.1.6
+3. [x] Title: CodeDocGen v1.1.6 - Groq Model Fallback Support with Multiple Models Priority
 4. [x] Description:
    ```
-       ## CodeDocGen v1.1.0 - Intelligent Comment Generation with AST Analysis and NLTK
+       ## CodeDocGen v1.1.6 - Groq Model Fallback Support with Multiple Models Priority
 
    ### 🎯 New Features
+   - **Groq Model Fallback Support**: Multiple models with priority order and automatic fallback
+   - **Model Priority System**: `llama3-8b-8192` → `llama3.1-8b-instant` → `llama3-70b-8192`
+   - **Automatic Model Switching**: Seamless fallback when primary model is unavailable
    - **Intelligent Comment Generation**: AST analysis and NLTK-powered documentation with context-aware descriptions
    - **Context-Aware Parameter Descriptions**: Smart parameter descriptions based on names and context
    - **Function-Specific Return Types**: Intelligent return type descriptions based on function purpose
@@ -86,10 +92,10 @@
    ### Installation
    ```bash
    # From PyPI (production)
-   pip install code-doc-gen==1.1.0
+   pip install code-doc-gen==1.1.6
    
    # From TestPyPI (latest)
-   pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.0
+   pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.6
    ```
 
    ### Quick Start
@@ -115,13 +121,13 @@
    ```
 2. [x] Upload to TestPyPI
    ```bash
-   twine upload --repository testpypi dist/code_doc_gen-1.1.0*
+   twine upload --repository testpypi dist/code_doc_gen-1.1.6*
    ```
 
 ### PyPI Release (Production)
 1. [x] Upload to PyPI
    ```bash
-   twine upload dist/code_doc_gen-1.1.0*
+   twine upload dist/code_doc_gen-1.1.6*
    ```
 
 ### Post-Release Tasks
@@ -132,7 +138,10 @@
 
 ## Version History
 
-### v1.1.0 (Current Release)
+### v1.1.6 (Current Release)
+- **Groq Model Fallback Support**: Multiple models with priority order and automatic fallback
+- **Model Priority System**: `llama3-8b-8192` → `llama3.1-8b-instant` → `llama3-70b-8192`
+- **Automatic Model Switching**: Seamless fallback when primary model is unavailable
 - **Intelligent Comment Generation**: AST analysis and NLTK-powered documentation with context-aware descriptions
 - **Context-Aware Parameter Descriptions**: Smart parameter descriptions based on names and context
 - **Function-Specific Return Types**: Intelligent return type descriptions based on function purpose
@@ -142,7 +151,7 @@
 - **Enhanced C++ Parser**: Deep AST traversal with libclang for better recursion detection
 - **Python AST Analyzer**: New dedicated AST analyzer for detailed code analysis
 - **Fixed Wordnet Issues**: Resolved incorrect synonym associations for parameter names
-- **Production Ready**: First PyPI release with intelligent features
+- **Production Ready**: PyPI release with intelligent features and model fallback
 
 ### v1.0.14 (Previous Release)
 - Initial language-aware comment detection implementation

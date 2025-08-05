@@ -272,7 +272,7 @@ jobs:
 
 | Package Manager | Status | Installation Command |
 |----------------|--------|---------------------|
-| PyPI | ✅ Released v1.1.0 | `pip install code-doc-gen==1.1.0` |
+| PyPI | ✅ Released v1.1.6 | `pip install code-doc-gen==1.1.6` |
 | vcpkg | Configured | `vcpkg install codedocgen` |
 | Conan | Configured | `conan install codedocgen/1.0.0` |
 | Homebrew | Pending | `brew install codedocgen` |

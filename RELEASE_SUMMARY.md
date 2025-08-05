@@ -1,24 +1,28 @@
-# CodeDocGen v1.1.0 Release Summary
+# CodeDocGen v1.1.6 Release Summary
 
 ## Release Information
-- **Version**: 1.1.0
-- **Release Date**: August 3, 2025
-- **Status**: Released (First PyPI Production Release)
-- **GitHub Tag**: v1.1.0
+- **Version**: 1.1.6
+- **Release Date**: August 5, 2025
+- **Status**: Released (TestPyPI Release)
+- **GitHub Tag**: v1.1.6
 - **PyPI Package**: code-doc-gen
-- **PyPI**: https://pypi.org/project/code-doc-gen/1.1.0/
-- **TestPyPI**: https://test.pypi.org/project/code_doc_gen/1.1.0/
+- **TestPyPI**: https://test.pypi.org/project/code-doc-gen/1.1.6/
 
-## What's New in v1.1.0
+## What's New in v1.1.6
 
-### 🎯 Intelligent Comment Generation
-- **AST Analysis Integration**: Deep code analysis using Python's ast module and libclang for C++
-- **NLTK-Powered Descriptions**: Advanced natural language processing for intelligent descriptions
+### 🎯 Groq Model Fallback Support
+- **Multiple Model Support**: Priority-based model selection with automatic fallback
+- **Model Priority System**: `llama3-8b-8192` → `llama3.1-8b-instant` → `llama3-70b-8192`
+- **Automatic Model Switching**: Seamless fallback when primary model is unavailable
+- **Enhanced AI Configuration**: Support for model lists in configuration files
+- **Intelligent Comment Generation**: AST analysis and NLTK-powered documentation with context-aware descriptions
 - **Context-Aware Parameter Descriptions**: Smart parameter descriptions based on names and context
 - **Function-Specific Return Types**: Intelligent return type descriptions based on function purpose
 - **Behavioral Detection**: Detects recursion, loops, conditionals, regex usage, API calls, and file operations
 
 ### 🔧 Enhanced Functionality
+- **Model Fallback System**: Automatic switching between Groq models for reliability
+- **Enhanced AI Provider Configuration**: Support for multiple models per provider
 - **Specific Actions**: Generates specific action verbs instead of generic "processes" descriptions
 - **Complete Coverage**: All functions receive intelligent, meaningful comments
 - **Enhanced C++ Parser**: Deep AST traversal with libclang for better recursion detection
@@ -53,14 +57,14 @@
 
 ## Installation
 
-### From PyPI (Production)
-```bash
-pip install code-doc-gen==1.1.0
-```
-
 ### From TestPyPI (Latest)
 ```bash
-pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.0
+pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.6
+```
+
+### From PyPI (Production - Coming Soon)
+```bash
+pip install code-doc-gen==1.1.6
 ```
 
 ### From Source
@@ -97,6 +101,7 @@ results = generate_docs('/path/to/repo', inplace=True)
 - Uses built-in ast module with intelligent analysis
 - Generates PEP 257 compliant docstrings with context-aware descriptions
 - Detects function signatures, parameters, return types, exceptions
+- **NEW**: Groq model fallback support with multiple models
 - **NEW**: Intelligent parameter and return type descriptions
 - **NEW**: Behavioral detection (recursion, loops, conditionals, regex, API calls)
 - Example output:
@@ -115,6 +120,7 @@ results = generate_docs('/path/to/repo', inplace=True)
 - Uses libclang for AST parsing with deep traversal
 - Generates Doxygen-style comments with intelligent descriptions
 - Detects function signatures, parameters, return types, exceptions
+- **NEW**: Groq model fallback support with multiple models
 - **NEW**: Enhanced recursion detection and behavioral analysis
 - **NEW**: Context-aware parameter and return type descriptions
 - Example output:
@@ -157,6 +163,7 @@ results = generate_docs('/path/to/repo', inplace=True)
 - JavaScript/TypeScript support
 - Enhanced templates and customization
 - Performance optimizations
+- Additional AI provider support
 
 ### Version 1.3 (Planned)
 - Go and Rust support
@@ -171,11 +178,10 @@ results = generate_docs('/path/to/repo', inplace=True)
 - **Documentation**: https://github.com/mohitmishra786/CodeDocGen#readme
 
 ## Release Files
-- **Source Distribution**: `code_doc_gen-1.1.0.tar.gz`
-- **Wheel Distribution**: `code_doc_gen-1.1.0-py3-none-any.whl`
-- **GitHub Release**: https://github.com/mohitmishra786/CodeDocGen/releases/tag/v1.1.0
-- **PyPI**: https://pypi.org/project/code-doc-gen/1.1.0/
-- **TestPyPI**: https://test.pypi.org/project/code_doc_gen/1.1.0/
+- **Source Distribution**: `code_doc_gen-1.1.6.tar.gz`
+- **Wheel Distribution**: `code_doc_gen-1.1.6-py3-none-any.whl`
+- **GitHub Release**: https://github.com/mohitmishra786/CodeDocGen/releases/tag/v1.1.6
+- **TestPyPI**: https://test.pypi.org/project/code-doc-gen/1.1.6/
 
 ## Support
 - **Issues**: https://github.com/mohitmishra786/CodeDocGen/issues
@@ -184,4 +190,4 @@ results = generate_docs('/path/to/repo', inplace=True)
 
 ---
 
-**CodeDocGen v1.1.0 is now available with intelligent comment generation powered by AST analysis and NLTK!** 
+**CodeDocGen v1.1.6 is now available with Groq model fallback support and intelligent comment generation powered by AST analysis and NLTK!** 
