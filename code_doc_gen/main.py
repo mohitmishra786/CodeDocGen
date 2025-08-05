@@ -255,8 +255,12 @@ Examples:
             
             # Update config with AI settings
             config.config['ai'] = ai_config
-            
-            # Log AI configuration
+        
+        # Initialize scanner AFTER AI configuration is updated
+        scanner = RepositoryScanner(config)
+        
+        # Log AI configuration AFTER scanner is created
+        if args.enable_ai or args.ai_provider or args.groq_api_key or args.openai_api_key:
             from .ai_analyzer import AIAnalyzer
             ai_analyzer = AIAnalyzer(config)
             provider_info = ai_analyzer.get_provider_info()
@@ -273,9 +277,6 @@ Examples:
                         logger.info(f"{provider_name.capitalize()} API key configured: {provider_data.get('has_key', False)}")
                     if provider_data.get('note'):
                         logger.info(f"{provider_name.capitalize()} note: {provider_data['note']}")
-        
-        # Initialize scanner
-        scanner = RepositoryScanner(config)
         
         # Check supported languages
         supported_langs = scanner.get_supported_languages()

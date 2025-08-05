@@ -9,6 +9,24 @@ import yaml
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
+# Load environment variables from .env file if it exists
+try:
+    from dotenv import load_dotenv
+    # Load .env from current working directory (where user runs the command)
+    # Try multiple locations to find the .env file
+    import os
+    cwd = os.getcwd()
+    env_path = os.path.join(cwd, '.env')
+    
+    if os.path.exists(env_path):
+        load_dotenv(env_path, override=True)
+    else:
+        # Fallback: try to load from current directory
+        load_dotenv(override=True)
+except ImportError:
+    # python-dotenv not installed, continue without .env support
+    pass
+
 
 class Config:
     """Configuration manager for CodeDocGen."""
@@ -115,17 +133,16 @@ class Config:
             "*/__pycache__/*",
             "*/build/*",
             "*/dist/*",
-            "*/codedocgen/*",
-            "*/venv/*",
-            "*/env/*",
-            "*/\.venv/*",
-            "*/\.env/*",
-            "*/site-packages/*",
             "*.pyc",
             "*.o",
             "*.so",
             "*.dll",
-            "*.exe"
+            "*.exe",
+            "*/venv/*",
+            "*/env/*",
+            "*/target/*",
+            "*/bin/*",
+            "*/obj/*"
         ],
         "nltk": {
             "download_data": True,
@@ -138,16 +155,10 @@ class Config:
         "ai": {
             "enabled": False,
             "provider": "phind",
-            "groq_api_key": "",
-            "openai_api_key": "",
-            "fallback_providers": ["groq", "openai"],
-            "max_retries": 5,
-            "retry_delay": 1.0,
-            "models": {
-                "phind": "gpt-3.5-turbo",
-                "groq": "llama3-70b-8192",
-                "openai": "gpt-4o-mini"
-            }
+            "groq_api_key": "",  # Will be loaded from environment variable
+            "openai_api_key": "",  # Will be loaded from environment variable
+            "max_retries": 3,
+            "retry_delay": 1.0
         }
     }
     
@@ -162,6 +173,9 @@ class Config:
         
         if config_path and config_path.exists():
             self.load_config(config_path)
+        
+        # Load API keys from environment variables (highest priority)
+        self._load_env_api_keys()
     
     def load_config(self, config_path: Path) -> None:
         """
@@ -299,3 +313,15 @@ class Config:
             AI configuration dictionary
         """
         return self.config.get("ai", {}) 
+    
+    def _load_env_api_keys(self) -> None:
+        """Load API keys from environment variables."""
+        # Environment variables take precedence over config file values
+        groq_key = os.getenv('GROQ_API_KEY')
+        openai_key = os.getenv('OPENAI_API_KEY')
+        
+        if groq_key:
+            self.config['ai']['groq_api_key'] = groq_key
+        
+        if openai_key:
+            self.config['ai']['openai_api_key'] = openai_key 

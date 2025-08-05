@@ -135,7 +135,7 @@ logging:
 ai:
   enabled: false  # Set to true to enable AI-powered analysis
   provider: "phind"  # Options: "phind" (free, no API key) or "groq" (requires API key)
-  groq_api_key: ""  # Get from https://console.groq.com/keys if using Groq
-  openai_api_key: ""  # Get from https://platform.openai.com/account/api-keys if using OpenAI
+  groq_api_key: ""  # Get from https://console.groq.com/keys or set GROQ_API_KEY environment variable
+  openai_api_key: ""  # Get from https://platform.openai.com/account/api-keys or set OPENAI_API_KEY environment variable
   max_retries: 3  # Number of retries for AI API calls
   retry_delay: 1.0  # Delay between retries in seconds 

@@ -684,25 +684,20 @@ class CppParser(BaseParser):
         
         if not CLANG_AVAILABLE:
             functions = []
-            
-            # Pattern for function definitions
+            # Updated pattern for function definitions to match complex return types
             # Matches: return_type function_name(parameters) { body }
-            function_pattern = r'(\w+(?:\s*<[^>]*>)?)\s+(\w+)\s*\(([^)]*)\)\s*\{'
-            
+            function_pattern = r'([a-zA-Z_][\w:\s<>,&*]*)\s+(\w+)\s*\(([^)]*)\)\s*\{'
             matches = re.finditer(function_pattern, source_code)
             for match in matches:
                 return_type = match.group(1).strip()
                 function_name = match.group(2).strip()
                 params_str = match.group(3).strip()
-                
                 # Parse parameters
                 parameters = []
                 if params_str:
                     parameters = self._parse_parameters_regex(params_str)
-                
                 # Extract function body for analysis
                 body = self._analyze_function_body_regex(source_code, match.start(), function_name)
-                
                 function = Function(
                     name=function_name,
                     return_type=return_type,
@@ -710,16 +705,14 @@ class CppParser(BaseParser):
                     body=body,
                     function_type=FunctionType.FUNCTION
                 )
-                
                 functions.append(function)
-            
             return functions
             
         functions = []
         
-        # Pattern for function definitions
+        # Updated pattern for function definitions to match complex return types
         # Matches: return_type function_name(parameters) { body }
-        function_pattern = r'(\w+(?:\s*<[^>]*>)?)\s+(\w+)\s*\(([^)]*)\)\s*\{'
+        function_pattern = r'([a-zA-Z_][\w:\s<>,&*]*)\s+(\w+)\s*\(([^)]*)\)\s*\{'
         
         matches = re.finditer(function_pattern, source_code)
         for match in matches:
@@ -733,7 +726,7 @@ class CppParser(BaseParser):
                 parameters = self._parse_parameters_regex(params_str)
             
             # Extract function body for analysis
-            body = self._analyze_function_body_regex(source_code, match.start())
+            body = self._analyze_function_body_regex(source_code, match.start(), function_name)
             
             function = Function(
                 name=function_name,

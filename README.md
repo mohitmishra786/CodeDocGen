@@ -137,10 +137,45 @@ rules:
 ai:
   enabled: false  # Set to true to enable AI-powered analysis
   provider: "phind"  # Options: "phind" (free, no API key) or "groq" (requires API key)
-  groq_api_key: ""  # Get from https://console.groq.com/keys if using Groq
+  groq_api_key: ""  # Get from https://console.groq.com/keys or set GROQ_API_KEY environment variable
+  openai_api_key: ""  # Get from https://platform.openai.com/account/api-keys or set OPENAI_API_KEY environment variable
   max_retries: 3  # Number of retries for AI API calls
   retry_delay: 1.0  # Delay between retries in seconds
 ```
+
+## Environment Variables (Recommended for API Keys)
+
+For security and ease of use, it's recommended to use environment variables for API keys instead of hardcoding them in config files.
+
+### Setup
+
+1. **Copy the example environment file:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Edit the `.env` file and add your API keys:**
+   ```bash
+   # Groq API Key (get from https://console.groq.com/keys)
+   GROQ_API_KEY=your_groq_api_key_here
+   
+   # OpenAI API Key (get from https://platform.openai.com/account/api-keys)
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
+
+3. **Add `.env` to your `.gitignore` file:**
+   ```bash
+   echo ".env" >> .gitignore
+   ```
+
+### Priority Order
+
+The tool loads API keys in the following priority order:
+1. **Environment variables** (from `.env` file) - **Highest priority**
+2. **Command line arguments** (if provided)
+3. **Config file values** (from `config.yaml`) - **Lowest priority**
+
+This ensures your API keys are secure and not accidentally committed to version control.
 
 ## Supported Languages
 
@@ -191,16 +226,38 @@ CodeDocGen now supports AI-powered comment generation with intelligent fallback 
      provider: "phind"  # or "groq"
    ```
 
-2. **For Groq users:**
-   - Get API key from https://console.groq.com/keys
-   - Add to config: `groq_api_key: "your-api-key-here"`
+2. **For Groq/OpenAI users:**
+   - Get API keys from:
+     - Groq: https://console.groq.com/keys
+     - OpenAI: https://platform.openai.com/account/api-keys
+   - **Option 1: Use .env file (Recommended)**
+     ```bash
+     # Copy the example file
+     cp .env.example .env
+     
+     # Edit .env and add your API keys
+     GROQ_API_KEY=your_groq_api_key_here
+     OPENAI_API_KEY=your_openai_api_key_here
+     ```
+   - **Option 2: Add to config.yaml**
+     ```yaml
+     groq_api_key: "your-api-key-here"
+     openai_api_key: "your-openai-api-key-here"
+     ```
+   - **Note**: Environment variables (from .env) take precedence over config file values
 
 3. **Command line usage:**
    ```bash
    # Enable AI with Phind (free)
    code_doc_gen --repo /path/to/repo --enable-ai --ai-provider phind --inplace
    
-   # Enable AI with Groq
+   # Enable AI with Groq (using .env file)
+   code_doc_gen --repo /path/to/repo --enable-ai --ai-provider groq --inplace
+   
+   # Enable AI with OpenAI (using .env file)
+   code_doc_gen --repo /path/to/repo --enable-ai --ai-provider openai --inplace
+   
+   # Or pass API keys directly (not recommended for security)
    code_doc_gen --repo /path/to/repo --enable-ai --ai-provider groq --groq-api-key YOUR_KEY --inplace
    ```
 
@@ -215,7 +272,7 @@ This ensures the tool always works, even when AI services are unavailable.
 
 ## Intelligent Comment Generation (NLTK-based)
 
-CodeDocGen v1.1.0 introduces intelligent comment generation with AST analysis and NLTK-powered descriptions:
+CodeDocGen v1.1.3 introduces intelligent comment generation with AST analysis and NLTK-powered descriptions:
 
 ### Key Improvements
 - **Context-Aware Parameter Descriptions**: Smart parameter descriptions based on names and context
@@ -226,7 +283,7 @@ CodeDocGen v1.1.0 introduces intelligent comment generation with AST analysis an
 
 ### Language-Aware Comment Detection
 
-CodeDocGen v1.1.0 maintains intelligent comment detection that prevents duplicate documentation:
+CodeDocGen v1.1.3 maintains intelligent comment detection that prevents duplicate documentation:
 
 ### Python Comment Detection
 ```python

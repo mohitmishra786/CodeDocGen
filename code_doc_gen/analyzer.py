@@ -154,15 +154,32 @@ class IntelligentAnalyzer:
             return False
         
         # Check for documentation in the lines before the function
-        for i in range(max(0, function_line_idx - 10), function_line_idx):
+        # Only check the immediate lines before the function (not file-level docstrings)
+        start_check = max(0, function_line_idx - 3)  # Only check 3 lines before
+        
+        for i in range(start_check, function_line_idx):
             line = lines[i].strip()
             
             if language == 'python':
                 if line.startswith('"""') or line.startswith("'''") or line.startswith('#'):
+                    # Check if this is a file-level docstring (at the very beginning)
+                    if i < 5:  # If it's in the first few lines, it might be file-level
+                        # Check if there are any other functions before this one
+                        has_other_functions = False
+                        for j in range(i):
+                            if 'def ' in lines[j]:
+                                has_other_functions = True
+                                break
+                        if not has_other_functions:
+                            # This is likely a file-level docstring, not function documentation
+                            continue
                     return True
             else:
                 if (line.startswith('/**') or line.startswith('/*') or 
-                    line.startswith('//') or line.startswith('*')):
+                    line.startswith('///') or line.startswith('*')):
+                    return True
+                # Don't treat simple // comments as documentation unless they're documentation-specific
+                if line.startswith('//') and any(keyword in line.lower() for keyword in ['@brief', '@param', '@return', 'brief', 'param', 'return']):
                     return True
         
         return False
