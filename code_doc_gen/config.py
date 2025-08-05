@@ -134,6 +134,20 @@ class Config:
         "logging": {
             "level": "INFO",
             "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        },
+        "ai": {
+            "enabled": False,
+            "provider": "phind",
+            "groq_api_key": "",
+            "openai_api_key": "",
+            "fallback_providers": ["groq", "openai"],
+            "max_retries": 5,
+            "retry_delay": 1.0,
+            "models": {
+                "phind": "gpt-3.5-turbo",
+                "groq": "llama3-70b-8192",
+                "openai": "gpt-4o-mini"
+            }
         }
     }
     
@@ -275,4 +289,13 @@ class Config:
         Returns:
             Logging configuration dictionary
         """
-        return self.config.get("logging", {}) 
+        return self.config.get("logging", {})
+    
+    def get_ai_config(self) -> Dict[str, Any]:
+        """
+        Get AI configuration.
+        
+        Returns:
+            AI configuration dictionary
+        """
+        return self.config.get("ai", {}) 

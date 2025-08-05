@@ -15,6 +15,7 @@ from .parsers import ParserFactory
 from .analyzer import IntelligentAnalyzer
 from .models import Function, ParsedFile
 from .config import Config
+from .git_integration import GitIntegration
 
 
 class RepositoryScanner:
@@ -31,12 +32,7 @@ class RepositoryScanner:
         self.parser_factory = ParserFactory(config)
         self.analyzer = IntelligentAnalyzer(config)
         
-        # Set up logging
-        logging_config = config.get_logging_config()
-        logging.basicConfig(
-            level=getattr(logging, logging_config.get('level', 'INFO')),
-            format=logging_config.get('format', '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        )
+        # Get logger (logging configuration is handled centrally in main.py)
         self.logger = logging.getLogger(__name__)
     
     """
@@ -53,7 +49,8 @@ class RepositoryScanner:
         self, 
         repo_path: Path, 
         lang: Optional[str] = None, 
-        files: Optional[List[str]] = None
+        files: Optional[List[str]] = None,
+        changes_only: bool = False
     ) -> List[Path]:
         """
         Scan a repository for source files.
@@ -62,6 +59,7 @@ class RepositoryScanner:
             repo_path: Path to the repository
             lang: Programming language to filter by
             files: Specific files to process
+            changes_only: Whether to only process changed files (requires Git)
             
         Returns:
             List of file paths to process
@@ -70,6 +68,25 @@ class RepositoryScanner:
         
         if not repo_path.exists():
             raise ValueError(f"Repository path does not exist: {repo_path}")
+        
+        # Handle changes-only mode
+        if changes_only:
+            git_integration = GitIntegration(repo_path)
+            if not git_integration.is_git_repo:
+                self.logger.warning("Changes-only mode requires a Git repository")
+                return []
+            
+            # Get all supported file extensions
+            all_extensions = []
+            for lang_name in ['c++', 'python', 'java']:
+                all_extensions.extend(self.config.get_file_extensions(lang_name))
+            
+            # Get changed files and filter to source files
+            changed_files = git_integration.get_changed_files()
+            source_files = git_integration.filter_source_files(changed_files, all_extensions)
+            
+            self.logger.info(f"Found {len(source_files)} changed source files")
+            return source_files
         
         if files:
             # Process specific files
@@ -165,9 +182,12 @@ class RepositoryScanner:
             # Parse the file
             parsed_file = parser.parse_file(file_path)
             
+            # Determine language for AI analysis
+            detected_lang = lang or self._detect_language_from_file(file_path)
+            
             # Analyze functions
             for function in parsed_file.functions:
-                self.analyzer.analyze_function(function)
+                self.analyzer.analyze_function(function, detected_lang)
                 
                 # Analyze parameters
                 for parameter in function.parameters:
@@ -311,4 +331,25 @@ class RepositoryScanner:
         Returns:
             List of file extensions
         """
-        return self.config.get_file_extensions(lang) 
+        return self.config.get_file_extensions(lang)
+    
+    def _detect_language_from_file(self, file_path: Path) -> str:
+        """
+        Detect programming language from file extension.
+        
+        Args:
+            file_path: Path to the file
+            
+        Returns:
+            Detected language string
+        """
+        suffix = file_path.suffix.lower()
+        
+        if suffix in ['.py', '.pyx', '.pxd']:
+            return 'python'
+        elif suffix in ['.c', '.cpp', '.cc', '.cxx', '.h', '.hpp', '.hh', '.hxx']:
+            return 'c++'
+        elif suffix == '.java':
+            return 'java'
+        else:
+            return 'python'  # Default fallback 

@@ -10,24 +10,69 @@ import sys
 import logging
 from pathlib import Path
 from typing import Optional
+import os
+from datetime import datetime
+
+# Set up logging immediately at the very beginning
+def setup_logging_early():
+    """Set up logging configuration at the very beginning of the script."""
+    # Ensure logs directory exists
+    os.makedirs("logs", exist_ok=True)
+    log_filename = f"logs/codedocgen-{datetime.now().strftime('%Y%m%d-%H%M%S')}.log"
+    
+    # Get the root logger
+    root_logger = logging.getLogger()
+    
+    # Clear any existing handlers
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+    
+    # Create formatter
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    
+    # Create file handler (DEBUG level) - use append mode to prevent truncation
+    file_handler = logging.FileHandler(log_filename, mode='a', encoding='utf-8')
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
+    
+    # Create console handler (INFO level)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(formatter)
+    
+    # Add handlers to root logger
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+    
+    # Set root logger level to DEBUG to capture everything
+    root_logger.setLevel(logging.DEBUG)
+    
+    return log_filename
+
+# Set up logging immediately
+log_filename = setup_logging_early()
 
 from . import generate_docs, generate_cpp_docs, generate_python_docs
 from .scanner import RepositoryScanner
 from .config import Config
 
 
-def setup_logging(verbose: bool = False) -> None:
+def update_logging_level(verbose: bool = False) -> None:
     """
-    Set up logging configuration.
+    Update logging level for console output without recreating log file.
     
     Args:
         verbose: Whether to enable verbose logging
     """
     level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(
-        level=level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
+    
+    # Get the root logger
+    root_logger = logging.getLogger()
+    
+    # Update console handler level
+    for handler in root_logger.handlers:
+        if isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler):
+            handler.setLevel(level)
 
 
 def validate_args(args: argparse.Namespace) -> None:
@@ -131,6 +176,41 @@ Examples:
         help='Enable verbose logging'
     )
     
+    # AI-related arguments
+    parser.add_argument(
+        '--enable-ai',
+        action='store_true',
+        help='Enable AI-powered comment generation (requires configuration)'
+    )
+    
+    parser.add_argument(
+        '--ai-provider',
+        choices=['phind', 'groq', 'openai'],
+        help='AI provider to use (phind: free, no API key; groq: requires API key; openai: requires API key)'
+    )
+    
+    parser.add_argument(
+        '--groq-api-key',
+        help='Groq API key (get from https://console.groq.com/keys)'
+    )
+    
+    parser.add_argument(
+        '--openai-api-key',
+        help='OpenAI API key (get from https://platform.openai.com/account/api-keys)'
+    )
+    
+    parser.add_argument(
+        '--changes-only',
+        action='store_true',
+        help='Process only modified files (requires Git repository)'
+    )
+    
+    parser.add_argument(
+        '--auto-commit',
+        action='store_true',
+        help='Automatically commit generated documentation (requires Git repository)'
+    )
+    
     parser.add_argument(
         '--version',
         action='version',
@@ -140,8 +220,10 @@ Examples:
     args = parser.parse_args()
     
     try:
-        # Set up logging
-        setup_logging(args.verbose)
+        # Update logging level if verbose flag is set
+        if args.verbose:
+            update_logging_level(True)
+        
         logger = logging.getLogger(__name__)
         
         # Validate arguments
@@ -154,6 +236,43 @@ Examples:
         # Load configuration
         config_path = Path(args.config) if args.config else None
         config = Config(config_path)
+        
+        # Configure AI settings from command line arguments
+        if args.enable_ai or args.ai_provider or args.groq_api_key or args.openai_api_key:
+            ai_config = config.get_ai_config()
+            
+            if args.enable_ai:
+                ai_config['enabled'] = True
+            
+            if args.ai_provider:
+                ai_config['provider'] = args.ai_provider
+            
+            if args.groq_api_key:
+                ai_config['groq_api_key'] = args.groq_api_key
+            
+            if args.openai_api_key:
+                ai_config['openai_api_key'] = args.openai_api_key
+            
+            # Update config with AI settings
+            config.config['ai'] = ai_config
+            
+            # Log AI configuration
+            from .ai_analyzer import AIAnalyzer
+            ai_analyzer = AIAnalyzer(config)
+            provider_info = ai_analyzer.get_provider_info()
+            
+            logger.info(f"AI enabled: {provider_info['enabled']}")
+            logger.info(f"AI provider: {provider_info['primary_provider']}")
+            logger.info(f"AI available: {ai_analyzer.is_available()}")
+            
+            # Log provider-specific info
+            for provider_name, provider_data in provider_info['providers'].items():
+                if provider_data['available']:
+                    logger.info(f"{provider_name.capitalize()} available: {provider_data['available']}")
+                    if provider_data.get('requires_key'):
+                        logger.info(f"{provider_name.capitalize()} API key configured: {provider_data.get('has_key', False)}")
+                    if provider_data.get('note'):
+                        logger.info(f"{provider_name.capitalize()} note: {provider_data['note']}")
         
         # Initialize scanner
         scanner = RepositoryScanner(config)
@@ -169,7 +288,7 @@ Examples:
         
         # Scan repository
         logger.info("Scanning repository for source files...")
-        file_paths = scanner.scan_repository(Path(args.repo), args.lang, args.files)
+        file_paths = scanner.scan_repository(Path(args.repo), args.lang, args.files, args.changes_only)
         
         if not file_paths:
             logger.warning("No source files found to process")
@@ -260,6 +379,30 @@ Examples:
             logger.info("Files have been modified in place (backups created with .bak extension)")
         elif args.output_dir:
             logger.info(f"Modified files written to {args.output_dir}")
+        
+        # Handle auto-commit if requested
+        if args.auto_commit and args.inplace:
+            from .git_integration import GitIntegration
+            git_integration = GitIntegration(Path(args.repo))
+            
+            if git_integration.is_git_repo:
+                # Stage all modified files
+                staged_count = 0
+                for file_path in file_paths:
+                    if git_integration.stage_file(file_path):
+                        staged_count += 1
+                
+                if staged_count > 0:
+                    # Commit the changes
+                    commit_message = f"Auto-generated documentation for {staged_count} files"
+                    if git_integration.commit_changes(commit_message):
+                        logger.info(f"Auto-committed documentation changes: {commit_message}")
+                    else:
+                        logger.warning("Failed to auto-commit changes")
+                else:
+                    logger.info("No files to commit")
+            else:
+                logger.warning("Auto-commit requires a Git repository")
         
         return 0
         

@@ -54,9 +54,23 @@ class DocumentationGenerator:
         
         for function in functions:
             try:
-                doc_result = self._generate_function_documentation(function, lang)
-                if doc_result:
-                    documentation[function.get_full_name()] = doc_result.get_full_documentation()
+                # Check if function already has AI-generated documentation
+                if function.brief_description and function.brief_description.strip():
+                    # Function already has AI-generated documentation, use it directly
+                    # But ensure it's properly formatted
+                    if function.brief_description.startswith('"""') or function.brief_description.startswith('/**'):
+                        # Already formatted as docstring, use as-is
+                        documentation[function.get_full_name()] = function.brief_description
+                    else:
+                        # Raw description, format it properly
+                        doc_result = self._generate_function_documentation(function, lang)
+                        if doc_result:
+                            documentation[function.get_full_name()] = doc_result.get_full_documentation()
+                else:
+                    # Generate template-based documentation only if no AI documentation exists
+                    doc_result = self._generate_function_documentation(function, lang)
+                    if doc_result:
+                        documentation[function.get_full_name()] = doc_result.get_full_documentation()
             except Exception as e:
                 print(f"Error generating documentation for {function.name}: {e}")
                 continue
@@ -482,11 +496,17 @@ class DocumentationGenerator:
                         match = re.match(r'^(\s*)(?:\w+\s+)*' + re.escape(class_name) + r'::' + re.escape(func_name) + r'\s*\(', line)
                 else:
                     func_name = qualified_name
-                    # Match Python function definition
+                    # Match Python function definition - must be at start of line or after whitespace
                     match = re.match(r'^(\s*)(?:async\s+)?def\s+' + re.escape(func_name) + r'\s*\(', line)
-                    # Also try C++ function definition
+                    # Also try C++ function definition - must be at start of line or after whitespace
                     if not match:
-                        match = re.match(r'^(\s*)(?:\w+\s+)*\w+\s+' + re.escape(func_name) + r'\s*\(', line)
+                        # More specific pattern for C++ function definitions
+                        # Must start with return type, function name, and opening parenthesis
+                        # Should not be inside another function (no extra indentation)
+                        match = re.match(r'^(\s*)(?:\w+\s+)*\b' + re.escape(func_name) + r'\s*\([^)]*\)\s*(?:const\s*)?\s*\{?\s*$', line)
+                        # If that doesn't match, try a simpler pattern but ensure it's a definition
+                        if not match:
+                            match = re.match(r'^(\s*)(?:\w+\s+)*\b' + re.escape(func_name) + r'\s*\([^)]*\)\s*$', line)
                 
                 if match and qualified_name not in processed_functions:
                     indent = match.group(1) or ''

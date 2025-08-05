@@ -1,16 +1,17 @@
 # CodeDocGen
 
-A command-line tool and library that automatically generates Doxygen-style comments and documentation for functions and methods in codebases. Uses rule-based analysis and NLTK for natural language processing to create human-readable documentation without AI/ML.
+A command-line tool and library that automatically generates Doxygen-style comments and documentation for functions and methods in codebases. Uses AI-powered analysis with fallback to NLTK for intelligent, context-aware documentation generation.
 
 ## Features
 
-- **Intelligent Comment Generation**: AST analysis and NLTK-powered documentation with context-aware descriptions
+- **AI-Powered Comment Generation**: Uses Phind (free, no API key) or Groq for intelligent, context-aware documentation
+- **Smart Fallback System**: Falls back to NLTK-based analysis when AI is unavailable or fails
 - **Multi-language Support**: C/C++ (using libclang), Python (using ast), Java (basic support)
 - **Smart Function Analysis**: Analyzes function bodies to detect recursion, loops, conditionals, regex usage, API calls, and file operations
-- **NLTK Integration**: Uses natural language processing for intelligent parameter and return type descriptions
+- **Git Integration**: Process only changed files with `--changes-only` flag and auto-commit documentation with `--auto-commit`
 - **Context-Aware Descriptions**: Generates specific, meaningful descriptions instead of generic templates
 - **Flexible Output**: In-place file modification, diff generation, or new file creation
-- **Configurable**: YAML-based configuration for custom rules and templates
+- **Configurable**: YAML-based configuration for custom rules, templates, and AI settings
 - **Language-Aware Comment Detection**: Prevents duplicate documentation by detecting existing comments
 
 ## Installation
@@ -72,6 +73,18 @@ code_doc_gen --repo /path/to/repo --lang c++ --diff
 
 # Enable verbose logging
 code_doc_gen --repo /path/to/repo --lang python --verbose
+
+# Enable AI-powered documentation generation (using Phind - free, no API key)
+code_doc_gen --repo /path/to/repo --lang python --enable-ai --ai-provider phind --inplace
+
+# Use Groq AI provider (requires API key)
+code_doc_gen --repo /path/to/repo --lang c++ --enable-ai --ai-provider groq --groq-api-key YOUR_API_KEY --inplace
+
+# Process only changed files in a Git repository
+code_doc_gen --repo /path/to/repo --lang python --changes-only --inplace
+
+# Auto-commit generated documentation
+code_doc_gen --repo /path/to/repo --lang python --enable-ai --inplace --auto-commit
 ```
 
 ### Library Usage
@@ -119,6 +132,14 @@ rules:
     brief: "Computes the {noun} based on {params}."
   - pattern: "^get.*"
     brief: "Retrieves the {noun}."
+
+# AI configuration for intelligent comment generation
+ai:
+  enabled: false  # Set to true to enable AI-powered analysis
+  provider: "phind"  # Options: "phind" (free, no API key) or "groq" (requires API key)
+  groq_api_key: ""  # Get from https://console.groq.com/keys if using Groq
+  max_retries: 3  # Number of retries for AI API calls
+  retry_delay: 1.0  # Delay between retries in seconds
 ```
 
 ## Supported Languages
@@ -143,7 +164,56 @@ rules:
 - Fallback to regex-based parsing when javaparser is not available
 - Supports .java files
 
-## Intelligent Comment Generation
+## AI-Powered Comment Generation
+
+CodeDocGen now supports AI-powered comment generation with intelligent fallback to NLTK-based analysis:
+
+### AI Providers
+
+#### Phind (Recommended - Free)
+- **No API key required** - completely free to use
+- Uses Phind-70B model for high-quality comment generation
+- Automatic fallback to NLTK if AI is unavailable
+- Perfect for getting started with AI-powered documentation
+
+#### Groq (Alternative)
+- **Requires API key** from https://console.groq.com/keys
+- Uses Mixtral-8x7b-32768 model
+- Fast response times with generous free tier
+- Install with: `pip install groq`
+
+### Setup
+
+1. **Enable AI in configuration:**
+   ```yaml
+   ai:
+     enabled: true
+     provider: "phind"  # or "groq"
+   ```
+
+2. **For Groq users:**
+   - Get API key from https://console.groq.com/keys
+   - Add to config: `groq_api_key: "your-api-key-here"`
+
+3. **Command line usage:**
+   ```bash
+   # Enable AI with Phind (free)
+   code_doc_gen --repo /path/to/repo --enable-ai --ai-provider phind --inplace
+   
+   # Enable AI with Groq
+   code_doc_gen --repo /path/to/repo --enable-ai --ai-provider groq --groq-api-key YOUR_KEY --inplace
+   ```
+
+### Fallback System
+
+The tool uses a smart fallback system:
+1. **AI Analysis**: Try AI-powered comment generation first
+2. **NLTK Analysis**: Fall back to NLTK-based intelligent analysis if AI fails
+3. **Rule-based**: Final fallback to pattern-based rules
+
+This ensures the tool always works, even when AI services are unavailable.
+
+## Intelligent Comment Generation (NLTK-based)
 
 CodeDocGen v1.1.0 introduces intelligent comment generation with AST analysis and NLTK-powered descriptions:
 
@@ -304,3 +374,89 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **libclang**: For C/C++ AST parsing
 - **Python ast module**: For Python code analysis
 - **Community**: For feedback and contributions 
+
+## AI Providers Setup
+
+CodeDocGen supports multiple AI providers for intelligent documentation generation. You can configure one primary provider and set up fallback providers for reliability.
+
+### Available Providers
+
+#### 1. Phind (Free, No API Key Required)
+- **Status**: Unofficial API - use with caution
+- **Cost**: Free
+- **Setup**: No configuration required
+- **Warning**: This is an unofficial API that may be rate-limited, change, or violate terms of service. Use only for personal projects.
+
+#### 2. Groq (Free API Key Required)
+- **Status**: Official API
+- **Cost**: Free tier available
+- **Setup**: 
+  1. Visit [Groq Console](https://console.groq.com/keys)
+  2. Sign up for a free account
+  3. Generate an API key
+  4. Add to `config.yaml`:
+     ```yaml
+     ai:
+       groq_api_key: "your_groq_api_key_here"
+     ```
+
+#### 3. OpenAI (Paid API Key Required)
+- **Status**: Official API
+- **Cost**: Pay-per-use
+- **Setup**:
+  1. Visit [OpenAI Platform](https://platform.openai.com/account/api-keys)
+  2. Create an account and add billing information
+  3. Generate an API key
+  4. Add to `config.yaml`:
+     ```yaml
+     ai:
+       openai_api_key: "your_openai_api_key_here"
+     ```
+
+### Configuration
+
+Configure AI providers in your `config.yaml`:
+
+```yaml
+ai:
+  enabled: true
+  provider: "phind"  # Primary provider: phind, groq, or openai
+  fallback_providers: ["groq", "openai"]  # Fallback order
+  groq_api_key: "your_groq_key"
+  openai_api_key: "your_openai_key"
+  max_retries: 5
+  retry_delay: 1.0
+  models:
+    phind: "gpt-3.5-turbo"
+    groq: "llama3-70b-8192"
+    openai: "gpt-4o-mini"
+```
+
+### Usage Examples
+
+```bash
+# Use Phind (free, no key required)
+python -m code_doc_gen.main --repo . --files src/ --enable-ai --ai-provider phind
+
+# Use Groq with fallback to OpenAI
+python -m code_doc_gen.main --repo . --files src/ --enable-ai --ai-provider groq
+
+# Use OpenAI directly
+python -m code_doc_gen.main --repo . --files src/ --enable-ai --ai-provider openai
+```
+
+### Fallback Behavior
+
+The system automatically tries providers in this order:
+1. Primary provider (from config)
+2. Fallback providers (in order specified)
+
+If all AI providers fail, the system falls back to NLTK-based analysis.
+
+### Rate Limiting and Reliability
+
+- **Phind**: May be rate-limited; exponential backoff retry
+- **Groq**: Official rate limits; exponential backoff retry  
+- **OpenAI**: Official rate limits; exponential backoff retry
+
+All providers use intelligent retry logic with exponential backoff to handle temporary failures. 

@@ -2,4 +2,8 @@ clang>=6.0.0
 nltk>=3.8
 pyyaml>=6.0
 pytest>=7.0.0
-typing-extensions>=4.0.0 
+typing-extensions>=4.0.0
+requests>=2.25.0
+groq>=0.4.0
+openai>=1.0.0
+uuid 
