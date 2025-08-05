@@ -40,12 +40,12 @@ A command-line tool and library that automatically generates Doxygen-style comme
 
 ### From TestPyPI (Latest Version)
 ```bash
-pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.0
+pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.6
 ```
 
 ### From PyPI (Stable Version)
 ```bash
-pip install code-doc-gen==1.1.0
+pip install code-doc-gen==1.1.6
 ```
 
 ## Usage
@@ -78,7 +78,7 @@ code_doc_gen --repo /path/to/repo --lang python --verbose
 code_doc_gen --repo /path/to/repo --lang python --enable-ai --ai-provider phind --inplace
 
 # Use Groq AI provider (requires API key)
-code_doc_gen --repo /path/to/repo --lang c++ --enable-ai --ai-provider groq --groq-api-key YOUR_API_KEY --inplace
+code_doc_gen --repo /path/to/repo --lang c++ --enable-ai --ai-provider groq --inplace
 
 # Process only changed files in a Git repository
 code_doc_gen --repo /path/to/repo --lang python --changes-only --inplace
@@ -213,7 +213,9 @@ CodeDocGen now supports AI-powered comment generation with intelligent fallback 
 
 #### Groq (Alternative)
 - **Requires API key** from https://console.groq.com/keys
-- Uses Mixtral-8x7b-32768 model
+- **NEW**: Multiple model support with automatic fallback
+- **Primary Model**: `llama3-8b-8192` (fastest)
+- **Fallback Models**: `llama3.1-8b-instant`, `llama3-70b-8192`
 - Fast response times with generous free tier
 - Install with: `pip install groq`
 
@@ -275,6 +277,7 @@ This ensures the tool always works, even when AI services are unavailable.
 CodeDocGen v1.1.6 introduces intelligent comment generation with AST analysis and NLTK-powered descriptions:
 
 ### Key Improvements
+- **Groq Model Fallback Support**: Multiple models with priority order (`llama3-8b-8192` → `llama3.1-8b-instant` → `llama3-70b-8192`)
 - **Context-Aware Parameter Descriptions**: Smart parameter descriptions based on names and context
 - **Function-Specific Return Types**: Intelligent return type descriptions based on function purpose
 - **Behavioral Detection**: Detects recursion, loops, conditionals, regex usage, API calls, and file operations
@@ -382,7 +385,8 @@ pip install -e .
 
 ## Roadmap
 
-### Version 1.1 (Current Release)
+### Version 1.1.6 (Current Release)
+- **Groq Model Fallback Support**: Multiple models with priority order and automatic fallback
 - **Intelligent Comment Generation**: AST analysis and NLTK-powered documentation
 - **Context-Aware Descriptions**: Smart parameter and return type descriptions
 - **Behavioral Detection**: Recursion, loops, conditionals, regex, API calls, file operations
