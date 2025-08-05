@@ -272,7 +272,7 @@ This ensures the tool always works, even when AI services are unavailable.
 
 ## Intelligent Comment Generation (NLTK-based)
 
-CodeDocGen v1.1.3 introduces intelligent comment generation with AST analysis and NLTK-powered descriptions:
+CodeDocGen v1.1.6 introduces intelligent comment generation with AST analysis and NLTK-powered descriptions:
 
 ### Key Improvements
 - **Context-Aware Parameter Descriptions**: Smart parameter descriptions based on names and context
