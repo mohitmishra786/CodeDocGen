@@ -1,4 +1,4 @@
-# CodeDocGen v1.1.6 Release Checklist
+# CodeDocGen v1.1.7 Release Checklist
 
 ## Pre-Release Tasks
 
@@ -12,13 +12,14 @@
 ### Documentation
 - [x] README.md updated with current features
 - [x] Added language-aware comment detection documentation
-- [x] Updated installation instructions for TestPyPI
+- [x] Updated installation instructions for TestPyPI and PyPI
 - [x] Added usage examples for all supported languages
+- [x] Added OS-specific guides under `usage/` (Windows, Linux, macOS)
 - [x] Updated roadmap section
 
 ### Configuration
 - [x] setup.py updated with correct metadata
-- [x] Version number set to 1.1.6
+- [x] Version number set to 1.1.7
 - [x] Author information updated
 - [x] Package description reflects current capabilities
 - [x] Requirements.txt is current
@@ -40,41 +41,30 @@
 - [x] Context-aware return type descriptions working
 - [x] Behavioral detection (recursion, loops, conditionals) working
 
-### New Features in v1.1.6
-- [x] Groq model fallback support with multiple models priority
-- [x] Automatic model switching: `llama3-8b-8192` → `llama3.1-8b-instant` → `llama3-70b-8192`
-- [x] Enhanced AI provider configuration with model lists
-- [x] Intelligent comment generation with AST analysis
-- [x] NLTK-powered context-aware parameter descriptions
-- [x] Function-specific return type descriptions
-- [x] Behavioral detection (recursion, loops, conditionals, regex, API calls, file operations)
-- [x] Specific action verbs instead of generic descriptions
-- [x] Complete function coverage with intelligent comments
-- [x] Enhanced C++ parser with deep AST traversal
-- [x] Python AST analyzer for detailed code analysis
-- [x] Fixed wordnet synonym issues for parameter names
-- [x] Improved function name parsing with intelligent verb/object extraction
+### New Features in v1.1.7
+- [x] Robust libclang auto-detection with ABI probing and cross-platform env/config support
+- [x] Removed Phind provider; Groq as primary, OpenAI as fallback
+- [x] CLI flags for direct API key input; `.env` supported via python-dotenv
+- [x] Fixed Python docstring closing quote indentation
+- [x] Improved comment insertion logic for Python and C++
+- [x] Added comprehensive OS-specific usage guides
 
 ## Release Tasks
 
 ### GitHub Release
-1. [x] Create a new release on GitHub
-2. [x] Tag: v1.1.6
-3. [x] Title: CodeDocGen v1.1.6 - Groq Model Fallback Support with Multiple Models Priority
-4. [x] Description:
+1. [ ] Create a new release on GitHub
+2. [ ] Tag: v1.1.7
+3. [ ] Title: CodeDocGen v1.1.7 - libclang auto-detect, Groq primary, usage guides
+4. [ ] Description:
    ```
-       ## CodeDocGen v1.1.6 - Groq Model Fallback Support with Multiple Models Priority
+       ## CodeDocGen v1.1.7 - libclang auto-detect, Groq primary, usage guides
 
    ### 🎯 New Features
-   - **Groq Model Fallback Support**: Multiple models with priority order and automatic fallback
-   - **Model Priority System**: `llama3-8b-8192` → `llama3.1-8b-instant` → `llama3-70b-8192`
-   - **Automatic Model Switching**: Seamless fallback when primary model is unavailable
-   - **Intelligent Comment Generation**: AST analysis and NLTK-powered documentation with context-aware descriptions
-   - **Context-Aware Parameter Descriptions**: Smart parameter descriptions based on names and context
-   - **Function-Specific Return Types**: Intelligent return type descriptions based on function purpose
-   - **Behavioral Detection**: Detects recursion, loops, conditionals, regex usage, API calls, and file operations
-   - **Specific Actions**: Generates specific action verbs instead of generic "processes" descriptions
-   - **Complete Coverage**: All functions receive intelligent, meaningful comments
+   - **libclang Auto-Detection (Cross-Platform)**: Env/config discovery + ABI probe via Index.create
+   - **AI Provider Update**: Phind removed. Groq primary, OpenAI fallback with clear provider info
+   - **Python Docstring Fix**: Correct closing triple-quote indentation
+   - **Improved Generators**: Better detection of existing comments (Python/C++)
+   - **OS Usage Guides**: New `usage/` docs for Windows, Linux, macOS
 
    ### 🔧 Technical Improvements
    - **Python AST Analyzer**: New dedicated AST analyzer for detailed code analysis
@@ -92,10 +82,10 @@
    ### Installation
    ```bash
    # From PyPI (production)
-   pip install code-doc-gen==1.1.6
+   pip install code-doc-gen
    
    # From TestPyPI (latest)
-   pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.6
+   pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.7
    ```
 
    ### Quick Start
@@ -121,13 +111,13 @@
    ```
 2. [x] Upload to TestPyPI
    ```bash
-   twine upload --repository testpypi dist/code_doc_gen-1.1.6*
+   twine upload --repository testpypi dist/code_doc_gen-1.1.7*
    ```
 
 ### PyPI Release (Production)
-1. [x] Upload to PyPI
+1. [ ] Upload to PyPI
    ```bash
-   twine upload dist/code_doc_gen-1.1.6*
+   twine upload dist/code_doc_gen-1.1.7*
    ```
 
 ### Post-Release Tasks
@@ -138,7 +128,14 @@
 
 ## Version History
 
-### v1.1.6 (Current Release)
+### v1.1.7 (Current Release)
+- **libclang Auto-Detection**: Env/config discovery + ABI probe; cross-platform
+- **AI Providers**: Phind removed; Groq primary, OpenAI fallback
+- **Docstring Formatting**: Fixed closing quotes indentation for Python
+- **Documentation**: Added detailed OS-specific usage guides
+- **Robust Generators**: Better comment detection for Python and C++
+
+### v1.1.6
 - **Groq Model Fallback Support**: Multiple models with priority order and automatic fallback
 - **Model Priority System**: `llama3-8b-8192` → `llama3.1-8b-instant` → `llama3-70b-8192`
 - **Automatic Model Switching**: Seamless fallback when primary model is unavailable

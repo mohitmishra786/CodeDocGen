@@ -5,6 +5,11 @@ Uses libclang to parse C++ code and extract function signatures,
 parameters, and analyze function bodies.
 """
 
+import os
+import sys
+import glob
+import platform
+from ctypes.util import find_library
 from pathlib import Path
 from typing import List, Dict, Any, Optional, TYPE_CHECKING
 
@@ -49,27 +54,190 @@ class CppParser(BaseParser):
         if not CLANG_AVAILABLE:
             print("Warning: clang package not available. C++ parsing will use regex fallback only.")
             return
-            
-        # Initialize libclang
-        try:
-            clang.cindex.Config.set_library_file('/Library/Developer/CommandLineTools/usr/lib/libclang.dylib')
-        except Exception:
-            # Try alternative paths
+
+        self._configure_libclang(config)
+
+    def _configure_libclang(self, config: Config) -> None:
+        """Configure libclang location in a cross-platform, override-friendly way.
+
+        Resolution order (first match wins):
+        1) Explicit environment variables: LIBCLANG_LIBRARY_FILE, CLANG_LIBRARY_FILE,
+           LIBCLANG_PATH, CLANG_LIBRARY_PATH, LLVM_LIB_DIR
+        2) Project config (config.yaml): cpp.libclang.library_file or cpp.libclang.library_path
+        3) libclang PyPI package (bundled shared libraries) if installed
+        4) ctypes.util.find_library on common names
+        5) OS-specific common install locations (Homebrew/Xcode/Linux distro/Windows LLVM)
+        If all fail, regex fallback will be used.
+        """
+
+        def _try_set_and_probe(setter: str, value: str) -> bool:
+            """Try setting libclang via the given setter and probe Index.create.
+            Returns True on success, False otherwise.
+            """
             try:
-                clang.cindex.Config.set_library_file('/System/Volumes/Data/Library/Developer/CommandLineTools/usr/lib/libclang.dylib')
-            except Exception:
+                if setter == "file":
+                    clang.cindex.Config.set_library_file(value)
+                else:
+                    clang.cindex.Config.set_library_path(value)
+                # Probe: attempt to create an Index to validate ABI compatibility
                 try:
-                    clang.cindex.Config.set_library_file('/usr/local/lib/libclang.dylib')
+                    _ = clang.cindex.Index.create()
+                    return True
                 except Exception:
-                    try:
-                        clang.cindex.Config.set_library_file('/usr/lib/libclang.so')
-                    except Exception:
-                        try:
-                            clang.cindex.Config.set_library_file('/usr/lib/x86_64-linux-gnu/libclang.so')
-                        except Exception:
-                            # If all paths fail, we'll use regex fallback
-                            print("Warning: Could not configure libclang library path. C++ parsing will use regex fallback only.")
-                            pass
+                    return False
+            except Exception:
+                return False
+
+        # 1) Environment variables
+        env_library_file = (
+            os.getenv("LIBCLANG_LIBRARY_FILE") or os.getenv("CLANG_LIBRARY_FILE")
+        )
+        env_library_path = (
+            os.getenv("LIBCLANG_PATH")
+            or os.getenv("CLANG_LIBRARY_PATH")
+            or os.getenv("LLVM_LIB_DIR")
+        )
+
+        if env_library_file and Path(env_library_file).exists():
+            if _try_set_and_probe("file", env_library_file):
+                return
+
+        if env_library_path and Path(env_library_path).exists():
+            if _try_set_and_probe("path", env_library_path):
+                return
+
+        # 2) Config file overrides
+        cpp_cfg = config.config.get("cpp", {}).get("libclang", {})
+        cfg_library_file: Optional[str] = cpp_cfg.get("library_file")
+        cfg_library_path: Optional[str] = cpp_cfg.get("library_path")
+
+        if cfg_library_file and Path(cfg_library_file).exists():
+            if _try_set_and_probe("file", cfg_library_file):
+                return
+
+        if cfg_library_path and Path(cfg_library_path).exists():
+            if _try_set_and_probe("path", cfg_library_path):
+                return
+
+        # 3) If the unofficial PyPI 'libclang' package is installed, use its bundled libs
+        #    This package vendors platform-specific binaries under .../site-packages/libclang/native
+        try:
+            import importlib.util as _ilu
+            spec = _ilu.find_spec("libclang")
+            if spec and spec.submodule_search_locations:
+                for base in spec.submodule_search_locations:
+                    native_dir = os.path.join(base, "native")
+                    if os.path.isdir(native_dir):
+                        if _try_set_and_probe("path", native_dir):
+                            return
+            # Some wheels ship the library directly under site-packages without 'native'
+            import site
+            for p in site.getsitepackages() + [site.getusersitepackages()]:
+                for candidate in (
+                    os.path.join(p, 'libclang.dylib'),
+                    os.path.join(p, 'libclang.so'),
+                    os.path.join(p, 'libclang.dll'),
+                ):
+                    if os.path.exists(candidate):
+                        if _try_set_and_probe("file", candidate):
+                            return
+            # Also support the 'clang' package vendor location: site-packages/clang/native
+            spec2 = _ilu.find_spec("clang")
+            if spec2 and spec2.submodule_search_locations:
+                for base in spec2.submodule_search_locations:
+                    native_dir2 = os.path.join(base, "native")
+                    if os.path.isdir(native_dir2):
+                        candidate = os.path.join(native_dir2, 'libclang.dylib')
+                        if os.path.exists(candidate):
+                            if _try_set_and_probe("file", candidate):
+                                return
+                        if _try_set_and_probe("path", native_dir2):
+                            return
+        except Exception:
+            pass
+
+        # 4) ctypes-based search for common library names
+        for name in ("clang", "libclang"):
+            try:
+                found = find_library(name)
+                if found:
+                    # If this resolves to a full path, prefer set_library_file
+                    # Otherwise, fall back to set_library_file with the returned value
+                    if _try_set_and_probe("file", found):
+                        return
+            except Exception:
+                pass
+
+        # 5) OS-specific common locations
+        system_name = platform.system().lower()
+        candidate_files: List[str] = []
+        candidate_dirs: List[str] = []
+
+        if system_name == "darwin":
+            # Homebrew (Intel and Apple Silicon)
+            candidate_files += [
+                "/usr/local/opt/llvm/lib/libclang.dylib",
+                "/opt/homebrew/opt/llvm/lib/libclang.dylib",
+            ]
+            # Xcode Command Line Tools
+            candidate_files += [
+                "/Library/Developer/CommandLineTools/usr/lib/libclang.dylib",
+                "/System/Volumes/Data/Library/Developer/CommandLineTools/usr/lib/libclang.dylib",
+            ]
+            # Full Xcode installation
+            candidate_files += [
+                "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libclang.dylib",
+            ]
+
+        elif system_name == "linux":
+            # Common distro layouts
+            candidate_files += [
+                "/usr/lib/libclang.so",
+                "/usr/local/lib/libclang.so",
+                "/usr/lib/x86_64-linux-gnu/libclang.so",
+            ]
+            # LLVM versioned prefixes
+            candidate_dirs += [
+                "/usr/lib/llvm-18/lib",
+                "/usr/lib/llvm-17/lib",
+                "/usr/lib/llvm-16/lib",
+                "/usr/lib/llvm-15/lib",
+                "/usr/lib/llvm-14/lib",
+                "/usr/lib/llvm-13/lib",
+            ]
+            # Glob possible versioned lib names
+            for pattern in (
+                "/usr/lib/llvm-*/lib/libclang.so*",
+                "/usr/lib/*/libclang.so*",
+            ):
+                candidate_files.extend(glob.glob(pattern))
+
+        elif system_name == "windows":
+            # Typical LLVM installation
+            program_files = os.environ.get("ProgramFiles", r"C:\\Program Files")
+            candidate_files += [
+                os.path.join(program_files, "LLVM", "bin", "libclang.dll"),
+                os.path.join(program_files, "LLVM", "lib", "libclang.dll"),
+            ]
+            # Also try from PATH entries
+            for p in os.environ.get("PATH", "").split(os.pathsep):
+                candidate_files.append(os.path.join(p, "libclang.dll"))
+
+        # Try files first
+        for f in candidate_files:
+            if f and Path(f).exists():
+                if _try_set_and_probe("file", f):
+                    return
+
+        # Try directories next
+        for d in candidate_dirs:
+            if d and Path(d).exists():
+                if _try_set_and_probe("path", d):
+                    return
+
+        print(
+            "Warning: Could not configure libclang library path. C++ parsing will use regex fallback only."
+        )
     
     def can_parse(self, file_path: Path) -> bool:
         """

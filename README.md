@@ -4,7 +4,7 @@ A command-line tool and library that automatically generates Doxygen-style comme
 
 ## Features
 
-- **AI-Powered Comment Generation**: Uses Phind (free, no API key) or Groq for intelligent, context-aware documentation
+- **AI-Powered Comment Generation**: Uses Groq (primary) with optional OpenAI fallback for intelligent, context-aware documentation
 - **Smart Fallback System**: Falls back to NLTK-based analysis when AI is unavailable or fails
 - **Multi-language Support**: C/C++ (using libclang), Python (using ast), Java (basic support)
 - **Smart Function Analysis**: Analyzes function bodies to detect recursion, loops, conditionals, regex usage, API calls, and file operations
@@ -40,13 +40,18 @@ A command-line tool and library that automatically generates Doxygen-style comme
 
 ### From TestPyPI (Latest Version)
 ```bash
-pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.6
+pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.7
 ```
 
 ### From PyPI (Stable Version)
 ```bash
-pip install code-doc-gen==1.1.6
+pip install code-doc-gen
 ```
+
+### OS-specific setup guides (highly recommended)
+- Windows: [usage/windows.md](usage/windows.md)
+- Linux: [usage/linux.md](usage/linux.md)
+- macOS: [usage/macos.md](usage/macos.md)
 
 ## Usage
 
@@ -74,8 +79,8 @@ code_doc_gen --repo /path/to/repo --lang c++ --diff
 # Enable verbose logging
 code_doc_gen --repo /path/to/repo --lang python --verbose
 
-# Enable AI-powered documentation generation (using Phind - free, no API key)
-code_doc_gen --repo /path/to/repo --lang python --enable-ai --ai-provider phind --inplace
+# Enable AI-powered documentation generation (Groq)
+code_doc_gen --repo /path/to/repo --lang python --enable-ai --ai-provider groq --inplace
 
 # Use Groq AI provider (requires API key)
 code_doc_gen --repo /path/to/repo --lang c++ --enable-ai --ai-provider groq --inplace
@@ -136,7 +141,7 @@ rules:
 # AI configuration for intelligent comment generation
 ai:
   enabled: false  # Set to true to enable AI-powered analysis
-  provider: "phind"  # Options: "phind" (free, no API key) or "groq" (requires API key)
+provider: "groq"  # Options: "groq" (requires API key) or "openai" (requires API key)
   groq_api_key: ""  # Get from https://console.groq.com/keys or set GROQ_API_KEY environment variable
   openai_api_key: ""  # Get from https://platform.openai.com/account/api-keys or set OPENAI_API_KEY environment variable
   max_retries: 3  # Number of retries for AI API calls
@@ -186,6 +191,53 @@ This ensures your API keys are secure and not accidentally committed to version 
 - Supports both .c and .cpp files
 - **NEW**: Recognizes existing comments (`//`, `/* */`, `/** */`) to prevent duplicates
 
+#### Configuring libclang (Cross-Platform)
+
+CodeDocGen auto-detects libclang with ABI validation (it probes Index.create to ensure compatibility) using this order:
+
+1. Environment variables (from shell or `.env`):
+   - `LIBCLANG_LIBRARY_FILE` or `CLANG_LIBRARY_FILE` (full path to libclang shared lib)
+   - `LIBCLANG_PATH`, `CLANG_LIBRARY_PATH`, or `LLVM_LIB_DIR` (directory containing libclang)
+2. `config.yaml` overrides:
+   ```yaml
+   cpp:
+     libclang:
+       # Choose one
+       library_file: "/absolute/path/to/libclang.dylib"  # .so on Linux, .dll on Windows
+       # library_path: "/absolute/path/to/llvm/lib"
+   ```
+3. PyPI vendor locations:
+   - `libclang` package native folder (if installed)
+   - `clang/native` folder (if using the `clang` Python package that bundles a dylib)
+4. `find_library('clang'|'libclang')`
+5. OS default locations (Homebrew/Xcode on macOS, distro LLVM paths on Linux, `C:\\Program Files\\LLVM` on Windows)
+
+If none succeed, AST parsing falls back to a robust regex mode.
+
+macOS recommended setups:
+
+- Xcode Command Line Tools (simple, stable):
+  - Install Python bindings matching CLT (18.x):
+    ```bash
+    pip install 'clang==18.1.8'
+    ```
+  - Auto-detects `/Library/Developer/CommandLineTools/usr/lib/libclang.dylib` (no `.env` needed).
+
+- Homebrew LLVM (latest toolchain):
+  - `brew install llvm`
+  - Add to `.env`:
+    ```
+    LIBCLANG_LIBRARY_FILE=/opt/homebrew/opt/llvm/lib/libclang.dylib   # Apple Silicon
+    # or
+    LIBCLANG_LIBRARY_FILE=/usr/local/opt/llvm/lib/libclang.dylib      # Intel
+    ```
+
+Linux:
+- Prefer distro `libclang` and matching Python bindings, or set `LIBCLANG_LIBRARY_FILE` to the installed `.so`.
+
+Windows:
+- Install LLVM and set `LIBCLANG_LIBRARY_FILE` to the `libclang.dll` under `Program Files\\LLVM`.
+
 ### Python
 - Uses built-in ast module for parsing
 - Generates PEP 257 compliant docstrings
@@ -205,17 +257,11 @@ CodeDocGen now supports AI-powered comment generation with intelligent fallback 
 
 ### AI Providers
 
-#### Phind (Recommended - Free)
-- **No API key required** - completely free to use
-- Uses Phind-70B model for high-quality comment generation
-- Automatic fallback to NLTK if AI is unavailable
-- Perfect for getting started with AI-powered documentation
-
-#### Groq (Alternative)
-- **Requires API key** from https://console.groq.com/keys
-- **NEW**: Multiple model support with automatic fallback
-- **Primary Model**: `llama3-8b-8192` (fastest)
-- **Fallback Models**: `llama3.1-8b-instant`, `llama3-70b-8192`
+#### Groq (Primary)
+- Requires API key from https://console.groq.com/keys
+- Multiple model support with automatic fallback
+- Primary Model: `llama3-8b-8192` (fastest)
+- Fallback Models: `llama3.1-8b-instant`, `llama3-70b-8192`
 - Fast response times with generous free tier
 - Install with: `pip install groq`
 
@@ -225,7 +271,7 @@ CodeDocGen now supports AI-powered comment generation with intelligent fallback 
    ```yaml
    ai:
      enabled: true
-     provider: "phind"  # or "groq"
+     provider: "groq"
    ```
 
 2. **For Groq/OpenAI users:**
@@ -250,8 +296,8 @@ CodeDocGen now supports AI-powered comment generation with intelligent fallback 
 
 3. **Command line usage:**
    ```bash
-   # Enable AI with Phind (free)
-   code_doc_gen --repo /path/to/repo --enable-ai --ai-provider phind --inplace
+   # Enable AI with Groq
+   code_doc_gen --repo /path/to/repo --enable-ai --ai-provider groq --inplace
    
    # Enable AI with Groq (using .env file)
    code_doc_gen --repo /path/to/repo --enable-ai --ai-provider groq --inplace
@@ -274,7 +320,7 @@ This ensures the tool always works, even when AI services are unavailable.
 
 ## Intelligent Comment Generation (NLTK-based)
 
-CodeDocGen v1.1.6 introduces intelligent comment generation with AST analysis and NLTK-powered descriptions:
+CodeDocGen v1.1.7 introduces intelligent comment generation with AST analysis and NLTK-powered descriptions:
 
 ### Key Improvements
 - **Groq Model Fallback Support**: Multiple models with priority order (`llama3-8b-8192` → `llama3.1-8b-instant` → `llama3-70b-8192`)
@@ -367,7 +413,7 @@ CodeDocGen/
 ### Running Tests
 
 ```bash
-# Run all tests (76 tests)
+# Run all tests
 python -m pytest tests/ -v
 
 # Run specific test file
@@ -442,7 +488,7 @@ CodeDocGen supports multiple AI providers for intelligent documentation generati
 
 ### Available Providers
 
-#### 1. Phind (Free, No API Key Required)
+#### 1. Groq (Primary)
 - **Status**: Unofficial API - use with caution
 - **Cost**: Free
 - **Setup**: No configuration required
@@ -481,14 +527,14 @@ Configure AI providers in your `config.yaml`:
 ```yaml
 ai:
   enabled: true
-  provider: "phind"  # Primary provider: phind, groq, or openai
+provider: "groq"  # Primary provider: groq or openai
   fallback_providers: ["groq", "openai"]  # Fallback order
   groq_api_key: "your_groq_key"
   openai_api_key: "your_openai_key"
   max_retries: 5
   retry_delay: 1.0
   models:
-    phind: "gpt-3.5-turbo"
+groq: ["llama3-8b-8192", "llama3.1-8b-instant", "llama3-70b-8192"]
     groq: ["llama3-8b-8192", "llama3.1-8b-instant", "llama3-70b-8192"]
     openai: "gpt-4o-mini"
 ```
@@ -496,8 +542,8 @@ ai:
 ### Usage Examples
 
 ```bash
-# Use Phind (free, no key required)
-python -m code_doc_gen.main --repo . --files src/ --enable-ai --ai-provider phind
+# Use Groq
+python -m code_doc_gen.main --repo . --files src/ --enable-ai --ai-provider groq
 
 # Use Groq with fallback to OpenAI
 python -m code_doc_gen.main --repo . --files src/ --enable-ai --ai-provider groq
@@ -516,7 +562,7 @@ If all AI providers fail, the system falls back to NLTK-based analysis.
 
 ### Rate Limiting and Reliability
 
-- **Phind**: May be rate-limited; exponential backoff retry
+- **Groq**: Ensure API key is set via CLI or environment
 - **Groq**: Official rate limits; exponential backoff retry  
 - **OpenAI**: Official rate limits; exponential backoff retry
 

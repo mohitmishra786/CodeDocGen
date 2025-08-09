@@ -185,8 +185,8 @@ Examples:
     
     parser.add_argument(
         '--ai-provider',
-        choices=['phind', 'groq', 'openai'],
-        help='AI provider to use (phind: free, no API key; groq: requires API key; openai: requires API key)'
+        choices=['groq', 'openai'],
+        help='AI provider to use (groq: requires API key; openai: requires API key)'
     )
     
     parser.add_argument(
@@ -265,18 +265,14 @@ Examples:
             ai_analyzer = AIAnalyzer(config)
             provider_info = ai_analyzer.get_provider_info()
             
-            logger.info(f"AI enabled: {provider_info['enabled']}")
-            logger.info(f"AI provider: {provider_info['primary_provider']}")
+            logger.info(f"AI enabled: {provider_info.get('enabled')}")
+            logger.info(f"AI provider: {provider_info.get('provider')}")
             logger.info(f"AI available: {ai_analyzer.is_available()}")
             
-            # Log provider-specific info
-            for provider_name, provider_data in provider_info['providers'].items():
-                if provider_data['available']:
-                    logger.info(f"{provider_name.capitalize()} available: {provider_data['available']}")
-                    if provider_data.get('requires_key'):
-                        logger.info(f"{provider_name.capitalize()} API key configured: {provider_data.get('has_key', False)}")
-                    if provider_data.get('note'):
-                        logger.info(f"{provider_name.capitalize()} note: {provider_data['note']}")
+            # Provider-specific info (Groq/OpenAI)
+            if provider_info.get('provider') == 'groq':
+                logger.info(f"Groq available: {provider_info.get('groq_available', False)}")
+                logger.info(f"Groq API key configured: {provider_info.get('api_key_configured', False)}")
         
         # Check supported languages
         supported_langs = scanner.get_supported_languages()

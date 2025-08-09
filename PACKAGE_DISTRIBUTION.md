@@ -20,7 +20,7 @@ This guide covers how to distribute CodeDocGen to various package managers and r
 twine upload --repository testpypi dist/*
 
 # Test installation from TestPyPI
-pip install --index-url https://test.pypi.org/simple/ code-doc-gen
+pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.7
 ```
 
 ### Upload to PyPI
@@ -272,7 +272,7 @@ jobs:
 
 | Package Manager | Status | Installation Command |
 |----------------|--------|---------------------|
-| PyPI | ✅ Released v1.1.6 | `pip install code-doc-gen==1.1.6` |
+| PyPI | ✅ Released v1.1.7 | `pip install code-doc-gen` |
 | vcpkg | Configured | `vcpkg install codedocgen` |
 | Conan | Configured | `conan install codedocgen/1.0.0` |
 | Homebrew | Pending | `brew install codedocgen` |

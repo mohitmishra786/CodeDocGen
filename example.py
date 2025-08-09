@@ -630,10 +630,10 @@ def test_ai_documentation_generation():
     demo_dir = demonstrate_ai_powered_documentation()
     
     # Test with AI enabled
-    print("1. Testing with AI enabled (Phind with Groq fallback):")
+    print("1. Testing with AI enabled (Groq with OpenAI fallback):")
     try:
         results = generate_docs(demo_dir, lang="python", inplace=True, 
-                              enable_ai=True, ai_provider="phind")
+                              enable_ai=True, ai_provider="groq")
         print("✅ AI documentation generation completed!")
         
         # Show some results
@@ -697,7 +697,7 @@ def main():
     
     print("\n=== Usage Examples ===")
     print("To test AI documentation generation:")
-    print("python -m code_doc_gen.main --repo . --files ai_demo/complex_algorithms.py --enable-ai --ai-provider phind --inplace")
+    print("python -m code_doc_gen.main --repo . --files ai_demo/complex_algorithms.py --enable-ai --ai-provider groq --inplace")
     print()
     print("To test with Groq fallback:")
     print("python -m code_doc_gen.main --repo . --files ai_demo/complex_algorithms.py --enable-ai --ai-provider groq --inplace")
