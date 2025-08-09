@@ -543,22 +543,41 @@ class DocumentationGenerator:
             return None
         line = lines[i].strip()
         if lang == 'python':
-            if (line.startswith('"""') or line.startswith("'''") or line.startswith('#')):
-                # If this is the first function and the docstring is at the very top, skip it
-                if is_first_function and i < 5:
-                    return None
-                return i
-        else:
+            # Walk up past decorators to check for comments above them
+            j = i
+            while j >= 0 and lines[j].strip().startswith('@'):
+                j -= 1
+            if j >= 0:
+                top = j
+                # If top is a comment/docstring line, include contiguous comment block
+                if lines[top].strip().startswith(('"""', "'''", '#')):
+                    # If this is the first function and the docstring is at the very top, skip it
+                    if is_first_function and top < 5:
+                        return None
+                    # For blocks of '#' comments, return the last comment line in the block (closest to function)
+                    if lines[top].strip().startswith('#'):
+                        k = top
+                        # Move downward from top to the last contiguous '#' before function
+                        # Since we're scanning upwards, the contiguous block is above; return current top index
+                        return top
+                    return top
+            return None
+        elif lang == 'c++':
             while i >= 0:
                 line = lines[i].strip()
-                # Only treat actual documentation comments as blocking insertion
-                if (line.startswith('/**') or line.startswith('/*') or line.startswith('///') or line.startswith('*')):
+                # Stop scanning if we hit another function or non-comment content
+                if re.search(r'\b\w+\s+\w+\s*\([^)]*\)\s*\{?', line):
+                    break
+                # Treat C++ style comments as documentation just above the function
+                if '*/' in line:
                     return i
-                # Only treat // comments as documentation if they contain documentation keywords
-                if line.startswith('//') and any(keyword in line.lower() for keyword in ['@brief', '@param', '@return', 'brief', 'param', 'return']):
+                if (line.startswith('/**') or line.startswith('/*') or line.startswith('///') or line.startswith('*') or line.startswith('//')):
                     return i
-                # Otherwise, skip non-documentation comments and keep looking further up
+                # Otherwise, keep looking further up
                 i -= 1
+            return None
+        else:
+            # Unknown languages: do not detect comments
             return None
     
     def _has_inline_documentation(self, lines: List[str], function_line_index: int, lang: str) -> bool:

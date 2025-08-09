@@ -1,33 +1,26 @@
-# CodeDocGen v1.1.6 Release Summary
+# CodeDocGen v1.1.7 Release Summary
 
 ## Release Information
-- **Version**: 1.1.6
-- **Release Date**: August 5, 2025
-- **Status**: Released (PyPI Production Release)
-- **GitHub Tag**: v1.1.6
+- **Version**: 1.1.7
+- **Release Date**: August 2025
+- **Status**: Released (TestPyPI), PyPI rollout
+- **GitHub Tag**: v1.1.7
 - **PyPI Package**: code-doc-gen
-- **TestPyPI**: https://test.pypi.org/project/code-doc-gen/1.1.6/
+- **TestPyPI**: https://test.pypi.org/project/code-doc-gen/1.1.7/
 
-## What's New in v1.1.6
+## What's New in v1.1.7
 
-### 🎯 Groq Model Fallback Support
-- **Multiple Model Support**: Priority-based model selection with automatic fallback
-- **Model Priority System**: `llama3-8b-8192` → `llama3.1-8b-instant` → `llama3-70b-8192`
-- **Automatic Model Switching**: Seamless fallback when primary model is unavailable
-- **Enhanced AI Configuration**: Support for model lists in configuration files
-- **Intelligent Comment Generation**: AST analysis and NLTK-powered documentation with context-aware descriptions
-- **Context-Aware Parameter Descriptions**: Smart parameter descriptions based on names and context
-- **Function-Specific Return Types**: Intelligent return type descriptions based on function purpose
-- **Behavioral Detection**: Detects recursion, loops, conditionals, regex usage, API calls, and file operations
+### 🎯 Highlights
+- libclang Auto-Detection (Cross-Platform) with ABI probing and env/config support
+- AI Provider Update: Phind removed; Groq primary, OpenAI fallback
+- Python Docstring Fix: Correct closing triple-quote indentation
+- Improved Generators: Better comment detection for Python and C++
+- OS Usage Guides: New `usage/` docs for Windows, Linux, macOS
 
 ### 🔧 Enhanced Functionality
-- **Model Fallback System**: Automatic switching between Groq models for reliability
-- **Enhanced AI Provider Configuration**: Support for multiple models per provider
-- **Specific Actions**: Generates specific action verbs instead of generic "processes" descriptions
-- **Complete Coverage**: All functions receive intelligent, meaningful comments
-- **Enhanced C++ Parser**: Deep AST traversal with libclang for better recursion detection
-- **Python AST Analyzer**: New dedicated AST analyzer for detailed code analysis
-- **Fixed Wordnet Issues**: Resolved incorrect synonym associations for parameter names
+- Cross-platform libclang discovery with environment variables, config, vendor paths, and OS defaults
+- Probing of `clang.cindex.Index.create()` to ensure ABI compatibility
+- Clean removal of Phind, simplified provider logic (Groq/OpenAI)
 
 ### 🧪 Quality Assurance
 - **Comprehensive Testing**: All features tested with extensive examples
@@ -59,12 +52,12 @@
 
 ### From PyPI (Production)
 ```bash
-pip install code-doc-gen==1.1.6
+pip install code-doc-gen
 ```
 
 ### From TestPyPI (Latest)
 ```bash
-pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.6
+pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.7
 ```
 
 ### From Source
@@ -178,11 +171,11 @@ results = generate_docs('/path/to/repo', inplace=True)
 - **Documentation**: https://github.com/mohitmishra786/CodeDocGen#readme
 
 ## Release Files
-- **Source Distribution**: `code_doc_gen-1.1.6.tar.gz`
-- **Wheel Distribution**: `code_doc_gen-1.1.6-py3-none-any.whl`
-- **GitHub Release**: https://github.com/mohitmishra786/CodeDocGen/releases/tag/v1.1.6
-- **PyPI**: https://pypi.org/project/code-doc-gen/1.1.6/
-- **TestPyPI**: https://test.pypi.org/project/code-doc-gen/1.1.6/
+- **Source Distribution**: `code_doc_gen-1.1.7.tar.gz`
+- **Wheel Distribution**: `code_doc_gen-1.1.7-py3-none-any.whl`
+- **GitHub Release**: https://github.com/mohitmishra786/CodeDocGen/releases/tag/v1.1.7
+- **PyPI**: https://pypi.org/project/code-doc-gen/
+- **TestPyPI**: https://test.pypi.org/project/code-doc-gen/1.1.7/
 
 ## Support
 - **Issues**: https://github.com/mohitmishra786/CodeDocGen/issues
@@ -191,4 +184,4 @@ results = generate_docs('/path/to/repo', inplace=True)
 
 ---
 
-**CodeDocGen v1.1.6 is now available with Groq model fallback support and intelligent comment generation powered by AST analysis and NLTK!** 
+**CodeDocGen v1.1.7 is now available with cross-platform libclang auto-detection, Groq-first AI, and improved generators!** 

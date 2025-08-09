@@ -5,6 +5,7 @@ Handles loading and validation of YAML configuration files with default settings
 """
 
 import os
+import copy
 import yaml
 from pathlib import Path
 from typing import Dict, List, Any, Optional
@@ -154,7 +155,7 @@ class Config:
         },
         "ai": {
             "enabled": False,
-            "provider": "phind",
+            "provider": "groq",
             "groq_api_key": "",  # Will be loaded from environment variable
             "openai_api_key": "",  # Will be loaded from environment variable
             "max_retries": 3,
@@ -169,7 +170,8 @@ class Config:
         Args:
             config_path: Path to custom configuration file
         """
-        self.config = self.DEFAULT_CONFIG.copy()
+        # Use deep copy to avoid cross-test/shared-mutation of nested dicts
+        self.config = copy.deepcopy(self.DEFAULT_CONFIG)
         
         if config_path and config_path.exists():
             self.load_config(config_path)
