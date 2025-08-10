@@ -290,7 +290,7 @@ class PythonParser(BaseParser):
             node: Function definition AST node
             
         Returns:
-            List of Exception objects
+            List of FunctionException objects
         """
         exceptions = []
         
