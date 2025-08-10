@@ -29,7 +29,8 @@ class JavaScriptParser(BaseParser):
             source = file_path.read_text(encoding='utf-8')
         except Exception as read_err:
             logging.getLogger(__name__).error(f"Failed reading {file_path}: {read_err}")
-            source = ''
+            # Return empty result early to avoid parsing empty content
+            return ParsedFile(file_path=str(file_path), language='javascript')
 
         parsed_file = ParsedFile(file_path=str(file_path), language='javascript')
 

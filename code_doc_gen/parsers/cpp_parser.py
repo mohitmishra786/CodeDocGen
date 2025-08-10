@@ -55,7 +55,7 @@ class CppParser(BaseParser):
         if not CLANG_AVAILABLE:
             print("Warning: clang package not available. C++ parsing will use regex fallback only.")
             return
-
+            
         self._configure_libclang(config)
 
     def _configure_libclang(self, config: Config) -> None:
@@ -88,7 +88,7 @@ class CppParser(BaseParser):
                 except Exception as probe_err:
                     msg = str(probe_err)
                     if any(token in msg.lower() for token in [
-                        'dlsym', 'symbol not found', 'incompatible', 'abi', 'undefined symbol', 'dyld'
+                        'dlsym', 'symbol not found', 'incompatible', 'abi', 'undefined symbol', 'dyld', 'version'
                     ]):
                         logging.getLogger(__name__).warning(
                             f"libclang ABI probe failed (possible ABI mismatch) for {setter}={value}: {probe_err}"
@@ -169,7 +169,7 @@ class CppParser(BaseParser):
                                 return
                         if _try_set_and_probe("path", native_dir2):
                             return
-        except Exception:
+                except Exception:
             pass
 
         # 4) ctypes-based search for common library names
@@ -181,7 +181,7 @@ class CppParser(BaseParser):
                     # Otherwise, fall back to set_library_file with the returned value
                     if _try_set_and_probe("file", found):
                         return
-            except Exception:
+                    except Exception:
                 pass
 
         # 5) OS-specific common locations
@@ -255,6 +255,7 @@ class CppParser(BaseParser):
             "Could not configure libclang library path after exhaustive search. "
             "C++ parsing will use regex fallback only."
         )
+        return
     
     def can_parse(self, file_path: Path) -> bool:
         """
