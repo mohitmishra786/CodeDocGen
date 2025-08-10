@@ -23,6 +23,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -e .
-      - name: Run tests
+      - name: Install test tools
         run: |
-          python -m pytest -q
+          pip install pytest-cov coverage
+      - name: Run tests with coverage
+        run: |
+          pytest -q --cov=code_doc_gen --cov-report=xml:coverage.xml --cov-report=term
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: coverage.xml

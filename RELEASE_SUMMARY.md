@@ -6,7 +6,7 @@
 - **Status**: Released (PyPI & TestPyPI)
 - **GitHub Tag**: v1.2.0
 - **PyPI Package**: code-doc-gen
-- **TestPyPI**: https://test.pypi.org/project/code-doc-gen/1.1.7/
+- **TestPyPI**: https://test.pypi.org/project/code-doc-gen/1.2.0/
 
 ## What's New in v1.2.0
 
