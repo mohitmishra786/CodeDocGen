@@ -92,7 +92,7 @@ def validate_args(args: argparse.Namespace) -> None:
     if not repo_path.is_dir():
         raise ValueError(f"Repository path must be a directory: {repo_path}")
     
-    if args.lang and args.lang not in ['c++', 'python']:
+    if args.lang and args.lang not in ['c++', 'python', 'java', 'javascript']:
         raise ValueError(f"Unsupported language: {args.lang}")
     
     if args.config and not Path(args.config).exists():
@@ -138,7 +138,7 @@ Examples:
     # Optional arguments
     parser.add_argument(
         '--lang',
-        choices=['c++', 'python'],
+        choices=['c++', 'python', 'java', 'javascript'],
         help='Programming language (auto-detect if not specified)'
     )
     
@@ -325,6 +325,8 @@ Examples:
                         file_lang = 'python'
                     elif file_path.suffix.lower() == '.java':
                         file_lang = 'java'
+                    elif file_path.suffix.lower() in ['.js', '.mjs', '.cjs']:
+                        file_lang = 'javascript'
                     else:
                         logger.warning(f"Could not determine language for {file_path}")
                         continue

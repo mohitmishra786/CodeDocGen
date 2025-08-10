@@ -78,7 +78,7 @@ class RepositoryScanner:
             
             # Get all supported file extensions
             all_extensions = []
-            for lang_name in ['c++', 'python', 'java']:
+            for lang_name in ['c++', 'python', 'java', 'javascript']:
                 all_extensions.extend(self.config.get_file_extensions(lang_name))
             
             # Get changed files and filter to source files
@@ -351,5 +351,7 @@ class RepositoryScanner:
             return 'c++'
         elif suffix == '.java':
             return 'java'
+        elif suffix in ['.js', '.mjs', '.cjs']:
+            return 'javascript'
         else:
             return 'python'  # Default fallback 
