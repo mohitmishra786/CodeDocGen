@@ -925,12 +925,21 @@ Do NOT include introductory text like "Here is the comment:" or similar."""
         Returns:
             Properly formatted comment
         """
+        # JavaScript normalization: convert bullet/section outputs to JSDoc tags
+        if language == 'javascript':
+            content = self._normalize_js_content(content)
+        
         # Split content into lines and clean each line
         lines = content.split('\n')
         cleaned_lines = []
         
         for line in lines:
             line = line.strip()
+            # Remove leading bullet asterisks from AI outputs to avoid '* *' duplication
+            line = re.sub(r'^\*+\s*', '', line)
+            # Normalize '@return' to '@returns' for JS
+            if language == 'javascript':
+                line = re.sub(r'^@return(\b)', r'@returns\1', line)
             if line and not line.isspace():
                 cleaned_lines.append(line)
         
@@ -940,6 +949,64 @@ Do NOT include introductory text like "Here is the comment:" or similar."""
             return f"/**\n * {comment_content}\n */"
         else:
             return "/**\n * Function documentation.\n */"
+
+    def _normalize_js_content(self, content: str) -> str:
+        """Normalize AI content into clean JSDoc-style lines for JavaScript."""
+        lines = [re.sub(r'^\*+\s*', '', ln.strip()) for ln in content.split('\n')]
+        result_lines: List[str] = []
+        param_lines: List[str] = []
+        returns_line: str = ''
+        mode = None
+        i = 0
+        while i < len(lines):
+            ln = lines[i]
+            if not ln or ln.lower() in {'none', '*'}:
+                i += 1
+                continue
+            low = ln.lower()
+            if low.startswith('parameters:') or low.startswith('parameters'):
+                mode = 'params'
+                i += 1
+                continue
+            if low.startswith('returns:') or low.startswith('return value:') or low.startswith('return:'):
+                mode = 'returns'
+                i += 1
+                # consume next non-empty line as returns description if available
+                while i < len(lines) and not lines[i].strip():
+                    i += 1
+                if i < len(lines):
+                    desc = re.sub(r'^\*+\s*', '', lines[i].strip())
+                    returns_line = f"@returns {desc}"
+                    i += 1
+                continue
+            if ln.startswith('@param') or ln.startswith('@return') or ln.startswith('@returns'):
+                # keep existing tags but normalize @return -> @returns later
+                if ln.startswith('@return'):
+                    ln = re.sub(r'^@return(\b)', r'@returns\1', ln)
+                if ln.startswith('@returns') and not returns_line:
+                    returns_line = ln
+                elif ln.startswith('@param'):
+                    param_lines.append(ln)
+                i += 1
+                continue
+            if mode == 'params':
+                m = re.match(r'^([A-Za-z_$][\w$]*)\s*[:\-]\s*(.+)$', ln)
+                if m:
+                    name, desc = m.group(1), m.group(2)
+                    param_lines.append(f"@param {name} {desc}")
+                    i += 1
+                    continue
+                # end params block on non-matching line
+                mode = None
+            # Otherwise treat as description if none set yet
+            if not result_lines:
+                result_lines.append(ln)
+            i += 1
+        # Append params and returns after description
+        result_lines.extend(param_lines)
+        if returns_line:
+            result_lines.append(returns_line)
+        return '\n'.join(result_lines)
     
     def _clean_docstring_content(self, content: str) -> str:
         """

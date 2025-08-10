@@ -85,6 +85,12 @@ class ParserFactory:
             self._parsers['java'] = JavaParser(self.config)
         except ImportError:
             print("Warning: Java parser not available")
+
+        try:
+            from .javascript_parser import JavaScriptParser
+            self._parsers['javascript'] = JavaScriptParser(self.config)
+        except ImportError:
+            print("Warning: JavaScript parser not available")
     
     def get_parser(self, language: str) -> BaseParser:
         """

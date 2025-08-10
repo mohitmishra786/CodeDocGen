@@ -6,11 +6,12 @@ parameters, and analyze function bodies.
 """
 
 import re
+import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 from . import BaseParser
-from ..models import Function, Parameter, FunctionBody, Exception, ParsedFile, FunctionType
+from ..models import Function, Parameter, FunctionBody, FunctionException, ParsedFile, FunctionType
 from ..config import Config
 
 
@@ -31,7 +32,7 @@ class JavaParser(BaseParser):
             self.javaparser = javaparser
         except ImportError:
             self.javaparser = None
-            print("Warning: javaparser not available, using regex-based parsing")
+            logging.getLogger(__name__).debug("javaparser not available; using regex-based parsing")
     
     def can_parse(self, file_path: Path) -> bool:
         """
@@ -290,7 +291,7 @@ class JavaParser(BaseParser):
             # Get exceptions
             exceptions = []
             for exception in method_decl.getThrownExceptions():
-                exceptions.append(Exception(name=exception.toString()))
+                exceptions.append(FunctionException(name=exception.toString()))
             
             # Determine function type
             function_type = FunctionType.METHOD
@@ -348,7 +349,7 @@ class JavaParser(BaseParser):
             throws_match = re.search(r'throws\s+([^{]+)', signature)
             if throws_match:
                 throws_str = throws_match.group(1).strip()
-                exceptions = [Exception(name=exc.strip()) for exc in throws_str.split(',')]
+                exceptions = [FunctionException(name=exc.strip()) for exc in throws_str.split(',')]
             
             # Determine function type
             function_type = FunctionType.METHOD

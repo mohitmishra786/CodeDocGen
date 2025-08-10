@@ -133,6 +133,8 @@ class DocumentationGenerator:
                 template = '""" {description} """'
             elif lang == "java":
                 template = "/**\n * {description}\n */"
+            elif lang == "javascript":
+                template = "/**\n * {description}\n */"
             else:
                 template = "/** {description} */"
         
@@ -160,6 +162,8 @@ class DocumentationGenerator:
             elif lang == "python":
                 template = '"""\n    {description}\n{params}{returns}{raises}\n    """'
             elif lang == "java":
+                template = "/**\n * {description}\n *\n{params}{returns}{throws}\n */"
+            elif lang == "javascript":
                 template = "/**\n * {description}\n *\n{params}{returns}{throws}\n */"
             else:
                 template = "/**\n * {description}\n *\n{params}{returns}{throws}\n */"
@@ -220,10 +224,12 @@ class DocumentationGenerator:
                 raises=throws_doc  # For Python compatibility
             )
         else:
-            # Only add newlines if the section is non-empty
-            params_doc = ("\n" + params_doc) if params_doc else ""
-            returns_doc = ("\n" + returns_doc) if returns_doc else ""
-            throws_doc = ("\n" + throws_doc) if throws_doc else ""
+            # For Java/JavaScript and other languages using JSDoc/Javadoc style,
+            # the template already includes a single blank line after the description (" *\n").
+            # So do NOT prepend extra newlines here to avoid double spacing before @param.
+            params_doc = params_doc or ""
+            returns_doc = returns_doc or ""
+            throws_doc = throws_doc or ""
             return template.format(
                 description=description,
                 params=params_doc,
@@ -255,6 +261,8 @@ class DocumentationGenerator:
                 elif lang == "python":
                     template = "    :param {name}: {description}"
                 elif lang == "java":
+                    template = " * @param {name} {description}"
+                elif lang == "javascript":
                     template = " * @param {name} {description}"
                 else:
                     template = " * @param {name} {description}"
@@ -311,6 +319,8 @@ class DocumentationGenerator:
                 template = "    :return: {description}"
             elif lang == "java":
                 template = " * @return {description}"
+            elif lang == "javascript":
+                template = " * @returns {description}"
             else:
                 template = " * @return {description}"
         
@@ -387,6 +397,8 @@ class DocumentationGenerator:
                 elif lang == "python":
                     template = "    :raises {exception}: {description}"
                 elif lang == "java":
+                    template = " * @throws {exception} {description}"
+                elif lang == "javascript":
                     template = " * @throws {exception} {description}"
                 else:
                     template = " * @throws {exception} {description}"
@@ -470,6 +482,8 @@ class DocumentationGenerator:
             return 'c++'
         elif ext == '.java':
             return 'java'
+        elif ext in ['.js', '.mjs', '.cjs', '.ts', '.tsx']:
+            return 'javascript'
         else:  # Fallback for other languages
             return 'unknown'
     
@@ -491,13 +505,44 @@ class DocumentationGenerator:
                     match = re.match(r'^(\s*)def\s+' + re.escape(func_name) + r'\s*\(', line)
                     if not match:
                         match = re.match(r'^(\s*)(?:\w+\s+)*' + re.escape(class_name) + r'::' + re.escape(func_name) + r'\s*\(', line)
+                elif '.' in qualified_name and lang in ['java', 'javascript']:
+                    # Handle Java/JavaScript class methods noted as Class.method
+                    class_name, func_name = qualified_name.split('.', 1)
+                    if lang == 'java':
+                        # Java method signature (allow modifiers and return type); don't require EOL
+                        match = re.match(r'^(\s*)(?:public|private|protected|static|final|synchronized|abstract|native|\s)*[\w<>\[\]]+\s+' + re.escape(func_name) + r'\s*\(', line)
+                    else:  # javascript class method inside class body line or start of line
+                        # Allow start-of-line or within class body; use search to find method occurrence
+                        m = re.search(r'(?:^|\s)(' + re.escape(func_name) + r')\s*\(', line)
+                        match = None
+                        if m:
+                            # Indentation at line start
+                            match = re.match(r'^(\s*)', line)
                 else:
                     func_name = qualified_name
+                    # Language-specific patterns without requiring end-of-line
                     match = re.match(r'^(\s*)(?:async\s+)?def\s+' + re.escape(func_name) + r'\s*\(', line)
                     if not match:
-                        match = re.match(r'^(\s*)(?:\w+\s+)*\b' + re.escape(func_name) + r'\s*\([^)]*\)\s*(?:const\s*)?\s*\{?\s*$', line)
-                        if not match:
-                            match = re.match(r'^(\s*)(?:\w+\s+)*\b' + re.escape(func_name) + r'\s*\([^)]*\)\s*$', line)
+                        if lang == 'javascript':
+                            # function declarations
+                            match = re.match(r'^(\s*)function\s+' + re.escape(func_name) + r'\s*\(', line)
+                            if not match:
+                                # const/let/var func = ...
+                                match = re.match(r'^(\s*)(?:const|let|var)\s+' + re.escape(func_name) + r'\s*=\s*', line)
+                                if not match:
+                                    # fallback: name( ... )
+                                    match = re.search(r'(?:^|\s)(' + re.escape(func_name) + r')\s*\(', line)
+                                    if match:
+                                        match = re.match(r'^(\s*)', line)
+                        elif lang == 'java':
+                            # Allow method definition anywhere on the line (e.g., inline with class)
+                            if re.search(r'\b' + re.escape(func_name) + r'\s*\(', line):
+                                match = re.match(r'^(\s*)', line)
+                            else:
+                                match = None
+                        else:
+                            # generic C/C++ style without end-of-line anchor
+                            match = re.match(r'^(\s*)(?:\w+\s+)*\b' + re.escape(func_name) + r'\s*\([^)]*\)', line)
                 if match and qualified_name not in processed_functions:
                     indent = match.group(1) or ''
                     # Check for actual documentation immediately before the function

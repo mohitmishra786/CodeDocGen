@@ -6,7 +6,7 @@ A command-line tool and library that automatically generates Doxygen-style comme
 
 - **AI-Powered Comment Generation**: Uses Groq (primary) with optional OpenAI fallback for intelligent, context-aware documentation
 - **Smart Fallback System**: Falls back to NLTK-based analysis when AI is unavailable or fails
-- **Multi-language Support**: C/C++ (using libclang), Python (using ast), Java (basic support)
+- **Multi-language Support**: C/C++ (using libclang), Python (using ast), Java (basic support), JavaScript (regex-based)
 - **Smart Function Analysis**: Analyzes function bodies to detect recursion, loops, conditionals, regex usage, API calls, and file operations
 - **Git Integration**: Process only changed files with `--changes-only` flag and auto-commit documentation with `--auto-commit`
 - **Context-Aware Descriptions**: Generates specific, meaningful descriptions instead of generic templates
@@ -40,7 +40,7 @@ A command-line tool and library that automatically generates Doxygen-style comme
 
 ### From TestPyPI (Latest Version)
 ```bash
-pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.7
+pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.2.0
 ```
 
 ### From PyPI (Stable Version)
@@ -246,7 +246,7 @@ Windows:
 - **NEW**: Recognizes existing comments (`#`, `"""`, `'''`) and decorators to prevent duplicates
 
 ### Java
-- **NEW**: Basic Java comment detection support
+- **NEW**: Java comment detection support (regex fallback)
 - Recognizes Javadoc-style comments with `@param`, `@return`, `@throws`
 - Fallback to regex-based parsing when javaparser is not available
 - Supports .java files
@@ -400,8 +400,9 @@ CodeDocGen/
 │       ├── __init__.py
 │       ├── cpp_parser.py    # C/C++ parser (libclang)
 │       ├── python_parser.py # Python parser (ast)
-│       └── java_parser.py   # Java parser (regex fallback)
-├── tests/                   # Unit tests (76 tests)
+│       ├── java_parser.py   # Java parser (regex fallback)
+│       └── javascript_parser.py   # JavaScript parser (regex-based)
+├── tests/                   # Unit tests (100+ tests)
 ├── requirements.txt         # Dependencies
 ├── setup.py                # Package setup
 ├── README.md               # This file
