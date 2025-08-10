@@ -952,6 +952,7 @@ Do NOT include introductory text like "Here is the comment:" or similar."""
 
     def _normalize_js_content(self, content: str) -> str:
         """Normalize AI content into clean JSDoc-style lines for JavaScript."""
+        # Allow flexible param formats: name: desc, name - desc, name — desc, name – desc
         lines = [re.sub(r'^\*+\s*', '', ln.strip()) for ln in content.split('\n')]
         result_lines: List[str] = []
         param_lines: List[str] = []
@@ -990,7 +991,7 @@ Do NOT include introductory text like "Here is the comment:" or similar."""
                 i += 1
                 continue
             if mode == 'params':
-                m = re.match(r'^([A-Za-z_$][\w$]*)\s*[:\-]\s*(.+)$', ln)
+                m = re.match(r'^([A-Za-z_$][\w$]*)\s*[:\-\u2013\u2014]\s*(.+)$', ln)
                 if m:
                     name, desc = m.group(1), m.group(2)
                     param_lines.append(f"@param {name} {desc}")

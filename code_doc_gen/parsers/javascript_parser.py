@@ -6,6 +6,7 @@ including function declarations, function expressions, arrow functions, and clas
 """
 
 import re
+import logging
 from pathlib import Path
 from typing import List, Optional
 
@@ -26,8 +27,10 @@ class JavaScriptParser(BaseParser):
     def parse_file(self, file_path: Path) -> ParsedFile:
         try:
             source = file_path.read_text(encoding='utf-8')
-        except Exception:
-            source = ''
+        except Exception as read_err:
+            logging.getLogger(__name__).error(f"Failed reading {file_path}: {read_err}")
+            # Return empty result early to avoid parsing empty content
+            return ParsedFile(file_path=str(file_path), language='javascript')
 
         parsed_file = ParsedFile(file_path=str(file_path), language='javascript')
 
@@ -73,9 +76,10 @@ class JavaScriptParser(BaseParser):
             for f in functions:
                 parsed_file.add_function(f)
 
-        except Exception:
-            # On parser error, return what we have
-            pass
+        except Exception as parse_err:
+            logging.getLogger(__name__).warning(
+                f"JavaScript parser error in {file_path}: {parse_err}. Returning partial results."
+            )
 
         return parsed_file
 
