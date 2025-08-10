@@ -1,21 +1,20 @@
-# CodeDocGen v1.1.7 Release Summary
+# CodeDocGen v1.2.0 Release Summary
 
 ## Release Information
-- **Version**: 1.1.7
+- **Version**: 1.2.0
 - **Release Date**: August 2025
-- **Status**: Released (TestPyPI), PyPI rollout
-- **GitHub Tag**: v1.1.7
+- **Status**: Released (PyPI & TestPyPI)
+- **GitHub Tag**: v1.2.0
 - **PyPI Package**: code-doc-gen
 - **TestPyPI**: https://test.pypi.org/project/code-doc-gen/1.1.7/
 
-## What's New in v1.1.7
+## What's New in v1.2.0
 
 ### 🎯 Highlights
-- libclang Auto-Detection (Cross-Platform) with ABI probing and env/config support
-- AI Provider Update: Phind removed; Groq primary, OpenAI fallback
-- Python Docstring Fix: Correct closing triple-quote indentation
-- Improved Generators: Better comment detection for Python and C++
-- OS Usage Guides: New `usage/` docs for Windows, Linux, macOS
+- TypeScript support (.ts/.tsx) via JavaScript parser
+- Normalized JSDoc output for AI responses (clean @param/@returns)
+- Improved insertion for Java/JS (no extra blank line before tags)
+- Added Java/JS parser and generator tests
 
 ### 🔧 Enhanced Functionality
 - Cross-platform libclang discovery with environment variables, config, vendor paths, and OS defaults
@@ -57,7 +56,7 @@ pip install code-doc-gen
 
 ### From TestPyPI (Latest)
 ```bash
-pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.7
+pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.2.0
 ```
 
 ### From Source
@@ -171,11 +170,11 @@ results = generate_docs('/path/to/repo', inplace=True)
 - **Documentation**: https://github.com/mohitmishra786/CodeDocGen#readme
 
 ## Release Files
-- **Source Distribution**: `code_doc_gen-1.1.7.tar.gz`
-- **Wheel Distribution**: `code_doc_gen-1.1.7-py3-none-any.whl`
-- **GitHub Release**: https://github.com/mohitmishra786/CodeDocGen/releases/tag/v1.1.7
-- **PyPI**: https://pypi.org/project/code-doc-gen/
-- **TestPyPI**: https://test.pypi.org/project/code-doc-gen/1.1.7/
+- **Source Distribution**: `code_doc_gen-1.2.0.tar.gz`
+- **Wheel Distribution**: `code_doc_gen-1.2.0-py3-none-any.whl`
+- **GitHub Release**: https://github.com/mohitmishra786/CodeDocGen/releases/tag/v1.2.0
+- **PyPI**: https://pypi.org/project/code-doc-gen/1.2.0/
+- **TestPyPI**: https://test.pypi.org/project/code-doc-gen/1.2.0/
 
 ## Support
 - **Issues**: https://github.com/mohitmishra786/CodeDocGen/issues
@@ -184,4 +183,4 @@ results = generate_docs('/path/to/repo', inplace=True)
 
 ---
 
-**CodeDocGen v1.1.7 is now available with cross-platform libclang auto-detection, Groq-first AI, and improved generators!** 
+**CodeDocGen v1.2.0 adds TypeScript support, normalizes JSDoc, and strengthens Java/JS coverage!** 

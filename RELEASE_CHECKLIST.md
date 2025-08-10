@@ -1,4 +1,4 @@
-# CodeDocGen v1.1.7 Release Checklist
+# CodeDocGen v1.2.0 Release Checklist
 
 ## Pre-Release Tasks
 
@@ -19,7 +19,7 @@
 
 ### Configuration
 - [x] setup.py updated with correct metadata
-- [x] Version number set to 1.1.7
+- [x] Version number set to 1.2.0
 - [x] Author information updated
 - [x] Package description reflects current capabilities
 - [x] Requirements.txt is current
@@ -41,23 +41,21 @@
 - [x] Context-aware return type descriptions working
 - [x] Behavioral detection (recursion, loops, conditionals) working
 
-### New Features in v1.1.7
-- [x] Robust libclang auto-detection with ABI probing and cross-platform env/config support
-- [x] Removed Phind provider; Groq as primary, OpenAI as fallback
-- [x] CLI flags for direct API key input; `.env` supported via python-dotenv
-- [x] Fixed Python docstring closing quote indentation
-- [x] Improved comment insertion logic for Python and C++
-- [x] Added comprehensive OS-specific usage guides
+### New Features in v1.2.0
+- [x] TypeScript support via JavaScript parser (.ts/.tsx)
+- [x] JavaScript JSDoc normalization for AI outputs
+- [x] Enhanced Java/JS generator insertion without extra blank lines
+- [x] Added Java/JS unit tests for declarations, arrows, class methods
 
 ## Release Tasks
 
 ### GitHub Release
 1. [ ] Create a new release on GitHub
-2. [ ] Tag: v1.1.7
-3. [ ] Title: CodeDocGen v1.1.7 - libclang auto-detect, Groq primary, usage guides
+2. [ ] Tag: v1.2.0
+3. [ ] Title: CodeDocGen v1.2.0 - TypeScript support, JS JSDoc normalization
 4. [ ] Description:
    ```
-       ## CodeDocGen v1.1.7 - libclang auto-detect, Groq primary, usage guides
+       ## CodeDocGen v1.2.0 - TypeScript support, JS JSDoc normalization
 
    ### 🎯 New Features
    - **libclang Auto-Detection (Cross-Platform)**: Env/config discovery + ABI probe via Index.create
@@ -111,13 +109,13 @@
    ```
 2. [x] Upload to TestPyPI
    ```bash
-   twine upload --repository testpypi dist/code_doc_gen-1.1.7*
+   twine upload --repository testpypi dist/code_doc_gen-1.2.0*
    ```
 
 ### PyPI Release (Production)
-1. [ ] Upload to PyPI
+1. [x] Upload to PyPI
    ```bash
-   twine upload dist/code_doc_gen-1.1.7*
+   twine upload dist/code_doc_gen-1.2.0*
    ```
 
 ### Post-Release Tasks
@@ -128,12 +126,11 @@
 
 ## Version History
 
-### v1.1.7 (Current Release)
-- **libclang Auto-Detection**: Env/config discovery + ABI probe; cross-platform
-- **AI Providers**: Phind removed; Groq primary, OpenAI fallback
-- **Docstring Formatting**: Fixed closing quotes indentation for Python
-- **Documentation**: Added detailed OS-specific usage guides
-- **Robust Generators**: Better comment detection for Python and C++
+### v1.2.0 (Current Release)
+- **TypeScript Support**: .ts/.tsx via JS parser; TS modifiers/generics handled
+- **JSDoc Normalization**: Clean @param/@returns for AI outputs
+- **Generator Improvements**: No extra blank lines before tags (Java/JS)
+- **More Tests**: Java/JS parser and generator cases added
 
 ### v1.1.6
 - **Groq Model Fallback Support**: Multiple models with priority order and automatic fallback
