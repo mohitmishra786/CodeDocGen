@@ -482,7 +482,7 @@ class DocumentationGenerator:
             return 'c++'
         elif ext == '.java':
             return 'java'
-        elif ext in ['.js', '.mjs', '.cjs']:
+        elif ext in ['.js', '.mjs', '.cjs', '.ts', '.tsx']:
             return 'javascript'
         else:  # Fallback for other languages
             return 'unknown'

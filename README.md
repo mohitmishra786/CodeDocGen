@@ -40,7 +40,7 @@ A command-line tool and library that automatically generates Doxygen-style comme
 
 ### From TestPyPI (Latest Version)
 ```bash
-pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.1.8
+pip install --index-url https://test.pypi.org/simple/ code_doc_gen==1.2.0
 ```
 
 ### From PyPI (Stable Version)

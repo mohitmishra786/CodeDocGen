@@ -21,7 +21,7 @@ class JavaScriptParser(BaseParser):
         super().__init__(config)
 
     def can_parse(self, file_path: Path) -> bool:
-        return file_path.suffix.lower() in {'.js', '.mjs', '.cjs'}
+        return file_path.suffix.lower() in {'.js', '.mjs', '.cjs', '.ts', '.tsx'}
 
     def parse_file(self, file_path: Path) -> ParsedFile:
         try:
@@ -36,25 +36,25 @@ class JavaScriptParser(BaseParser):
             functions: List[Function] = []
 
             # 1) Function declarations: function name(a, b) { ... }
-            for m in re.finditer(r"(^|\n)\s*function\s+([a-zA-Z_$][\w$]*)\s*\(([^)]*)\)", source):
-                name = m.group(2)
-                params = self._parse_params(m.group(3))
+            for m in re.finditer(r"\bfunction\s+([a-zA-Z_$][\w$]*)\s*\(([^)]*)\)", source):
+                name = m.group(1)
+                params = self._parse_params(m.group(2))
                 func = self._create_function(name, params, 'any', None)
                 func.source_code = source
                 functions.append(func)
 
             # 2) Function expressions: const name = function(a, b) { ... }
-            for m in re.finditer(r"(^|\n)\s*(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=\s*function\s*\(([^)]*)\)", source):
-                name = m.group(2)
-                params = self._parse_params(m.group(3))
+            for m in re.finditer(r"(?:^|\b)(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=\s*function\s*\(([^)]*)\)", source):
+                name = m.group(1)
+                params = self._parse_params(m.group(2))
                 func = self._create_function(name, params, 'any', None)
                 func.source_code = source
                 functions.append(func)
 
-            # 3) Arrow functions: const name = (a, b) => { ... } or name = a => a*2
-            for m in re.finditer(r"(^|\n)\s*(?:const|let|var)?\s*([a-zA-Z_$][\w$]*)\s*=\s*\(?([^)=]*)\)?\s*=>", source):
-                name = m.group(2)
-                params = self._parse_params(m.group(3))
+            # 3) Arrow functions: const name = (a, b): Ret => { ... } or name = a: T => a*2
+            for m in re.finditer(r"(?:^|\b)(?:const|let|var)?\s*([a-zA-Z_$][\w$]*)\s*=\s*\(?([^)=]*)\)?\s*(?::\s*[^=]+?)?\s*=>", source):
+                name = m.group(1)
+                params = self._parse_params(m.group(2))
                 func = self._create_function(name, params, 'any', None)
                 func.source_code = source
                 functions.append(func)
@@ -63,9 +63,9 @@ class JavaScriptParser(BaseParser):
             for class_match in re.finditer(r"class\s+([A-Za-z_$][\w$]*)\s*\{([\s\S]*?)\}", source):
                 class_name = class_match.group(1)
                 body = class_match.group(2)
-                for m in re.finditer(r"(^|\n)\s*(?:async\s+)?(?:static\s+)?([A-Za-z_$][\w$]*)\s*\(([^)]*)\)\s*\{", body):
-                    method_name = m.group(2)
-                    params = self._parse_params(m.group(3))
+                for m in re.finditer(r"(?:(?:public|private|protected|readonly|static|async)\s+)*([A-Za-z_$][\w$]*)\s*(?:<[^>]+>)?\s*\(([^)]*)\)\s*(?::\s*[^ {]+)?\s*\{", body):
+                    method_name = m.group(1)
+                    params = self._parse_params(m.group(2))
                     func = self._create_function(method_name, params, 'any', class_name)
                     func.source_code = source
                     functions.append(func)
@@ -102,8 +102,12 @@ class JavaScriptParser(BaseParser):
 
         params: List[Parameter] = []
         for p in parts:
-            # Handle patterns like: a, b = 2, {x,y}, [a,b]
+            # Handle patterns like: a, b = 2, {x,y}, [a,b], x?: T, x: T
             name = p.split('=')[0].strip()
+            # Remove TypeScript type annotation
+            name = name.split(':')[0].strip()
+            # Remove optional marker
+            name = name.replace('?', '').strip()
             # Strip destructuring braces for a name placeholder
             name_clean = re.sub(r"[\{\}\[\]\s]+", '', name) or 'param'
             params.append(Parameter(name=name_clean, type='any'))

@@ -128,7 +128,7 @@ class Config:
             "c++": [".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".hh", ".hxx"],
             "python": [".py", ".pyx", ".pxd"],
             "java": [".java"],
-            "javascript": [".js", ".mjs", ".cjs"]
+            "javascript": [".js", ".mjs", ".cjs", ".ts", ".tsx"]
         },
         "ignore_patterns": [
             "*/node_modules/*",
