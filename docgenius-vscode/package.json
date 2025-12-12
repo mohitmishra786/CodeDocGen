@@ -1,0 +1,195 @@
+{
+  "name": "docgenius",
+  "displayName": "DocGenius",
+  "description": "Intelligent automatic documentation generation for multiple programming languages using AI and AST analysis",
+  "version": "1.2.1",
+  "publisher": "mohitmishra",
+  "icon": "media/docgenius.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mohitmishra786/CodeDocGen"
+  },
+  "bugs": {
+    "url": "https://github.com/mohitmishra786/CodeDocGen/issues"
+  },
+  "homepage": "https://github.com/mohitmishra786/CodeDocGen#readme",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Formatters",
+    "Other"
+  ],
+  "keywords": [
+    "documentation",
+    "docstring",
+    "javadoc",
+    "jsdoc",
+    "doxygen",
+    "ai",
+    "code-generation",
+    "python",
+    "cpp",
+    "java",
+    "javascript",
+    "typescript"
+  ],
+  "activationEvents": [
+    "onLanguage:python",
+    "onLanguage:cpp",
+    "onLanguage:c",
+    "onLanguage:java",
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onCommand:docgenius.generateForFile",
+    "onCommand:docgenius.generateForSelection",
+    "onCommand:docgenius.generateForWorkspace"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "docgenius.generateForFile",
+        "title": "DocGenius: Generate Documentation for Current File"
+      },
+      {
+        "command": "docgenius.generateForSelection",
+        "title": "DocGenius: Generate Documentation for Selection"
+      },
+      {
+        "command": "docgenius.generateForWorkspace",
+        "title": "DocGenius: Generate Documentation for Workspace"
+      },
+      {
+        "command": "docgenius.configureAI",
+        "title": "DocGenius: Configure AI Provider"
+      },
+      {
+        "command": "docgenius.showStatus",
+        "title": "DocGenius: Show Status"
+      }
+    ],
+    "configuration": {
+      "title": "DocGenius",
+      "properties": {
+        "docgenius.ai.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable AI-powered documentation generation"
+        },
+        "docgenius.ai.provider": {
+          "type": "string",
+          "enum": [
+            "groq",
+            "openai",
+            "azure_openai",
+            "nltk"
+          ],
+          "default": "nltk",
+          "description": "AI provider to use for documentation generation"
+        },
+        "docgenius.azure.authMethod": {
+          "type": "string",
+          "enum": [
+            "apiKey",
+            "azureCli",
+            "managedIdentity"
+          ],
+          "default": "azureCli",
+          "description": "Authentication method for Azure OpenAI"
+        },
+        "docgenius.azure.endpoint": {
+          "type": "string",
+          "default": "",
+          "description": "Azure OpenAI endpoint URL"
+        },
+        "docgenius.azure.deploymentName": {
+          "type": "string",
+          "default": "gpt-4",
+          "description": "Azure OpenAI deployment name"
+        },
+        "docgenius.autoGenerateOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically generate documentation when saving files"
+        },
+        "docgenius.showPreviewBeforeApplying": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show diff preview before applying documentation changes"
+        },
+        "docgenius.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Path to Python interpreter (uses system Python if not specified)"
+        },
+        "docgenius.clangPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to libclang library for C++ parsing"
+        },
+        "docgenius.maxWorkers": {
+          "type": "number",
+          "default": 4,
+          "description": "Maximum number of worker threads for parallel processing"
+        },
+        "docgenius.enableCache": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable caching of AI responses and parsed ASTs"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "docgenius.generateForFile",
+        "key": "ctrl+alt+d",
+        "mac": "cmd+alt+d",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "docgenius.generateForSelection",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s",
+        "when": "editorHasSelection"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "docgenius.generateForFile",
+          "group": "1_modification",
+          "when": "resourceLangId in docgenius.supportedLanguages"
+        },
+        {
+          "command": "docgenius.generateForSelection",
+          "group": "1_modification",
+          "when": "editorHasSelection && resourceLangId in docgenius.supportedLanguages"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.80.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vscode/test-electron": "^2.3.0",
+    "eslint": "^8.45.0",
+    "typescript": "^5.1.0",
+    "@vscode/vsce": "^2.19.0"
+  },
+  "dependencies": {}
+}
+
