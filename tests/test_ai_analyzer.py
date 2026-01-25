@@ -40,22 +40,25 @@ class TestAIAnalyzer:
         self.config.config['ai']['enabled'] = True
         self.config.config['ai']['provider'] = 'groq'
         self.config.config['ai']['groq_api_key'] = 'test-key'
-        with patch('code_doc_gen.ai_analyzer.GROQ_AVAILABLE', True):
+        with patch('code_doc_gen.ai_providers.groq.GROQ_AVAILABLE', True):
             analyzer = AIAnalyzer(self.config)
             assert analyzer.ai_enabled
-            assert analyzer.ai_provider == 'groq'
-            assert analyzer.is_available()
+            assert analyzer.ai_provider_name == 'groq'
+            # We also need to mock the client creation or the is_available check
+            with patch('code_doc_gen.ai_providers.groq.groq.Groq', return_value=Mock()):
+                assert analyzer.is_available()
     
     def test_enable_ai_groq_without_key(self):
         """Test enabling AI with Groq but no API key."""
         self.config.config['ai']['enabled'] = True
         self.config.config['ai']['provider'] = 'groq'
         self.config.config['ai']['groq_api_key'] = ''  # Explicitly set empty key
+        self.config.config['ai']['fallback_providers'] = [] # Disable fallbacks
         
         analyzer = AIAnalyzer(self.config)
         assert analyzer.ai_enabled
-        assert analyzer.ai_provider == 'groq'
-        assert not analyzer.is_available()  # No API key
+        assert analyzer.ai_provider_name == 'groq'
+        assert not analyzer.is_available()  # No API key and no fallbacks
     
     def test_enable_ai_groq_with_key(self):
         """Test enabling AI with Groq and API key."""
@@ -63,11 +66,12 @@ class TestAIAnalyzer:
         self.config.config['ai']['provider'] = 'groq'
         self.config.config['ai']['groq_api_key'] = 'test-key'
         
-        with patch('code_doc_gen.ai_analyzer.GROQ_AVAILABLE', True):
-            analyzer = AIAnalyzer(self.config)
-            assert analyzer.ai_enabled
-            assert analyzer.ai_provider == 'groq'
-            assert analyzer.is_available()
+        with patch('code_doc_gen.ai_providers.groq.GROQ_AVAILABLE', True):
+            with patch('code_doc_gen.ai_providers.groq.groq.Groq', return_value=Mock()):
+                analyzer = AIAnalyzer(self.config)
+                assert analyzer.ai_enabled
+                assert analyzer.ai_provider_name == 'groq'
+                assert analyzer.is_available()
     
     def test_create_python_prompt(self):
         """Test Python prompt creation."""
@@ -110,7 +114,7 @@ class TestAIAnalyzer:
         signature = self.analyzer._get_function_signature(self.sample_function, "c++")
         assert signature == "int calculate_sum(int a, int b)"
     
-    @patch('code_doc_gen.ai_analyzer.groq')
+    @patch('code_doc_gen.ai_providers.groq.groq')
     def test_call_groq_success(self, mock_groq):
         """Test successful Groq API call."""
         # Mock Groq client and response
@@ -125,12 +129,14 @@ class TestAIAnalyzer:
         self.config.config['ai']['provider'] = 'groq'
         self.config.config['ai']['groq_api_key'] = 'test-key'
         
-        with patch('code_doc_gen.ai_analyzer.GROQ_AVAILABLE', True):
+        with patch('code_doc_gen.ai_providers.groq.GROQ_AVAILABLE', True):
             analyzer = AIAnalyzer(self.config)
-            response = analyzer._call_groq("test prompt")
+            # Testing through private _get_ai_response or analyze_function since _call_groq is gone
+            prompt = "test prompt"
+            response = analyzer._get_ai_response(prompt)
             assert response == '"""Adds two numbers together."""'
     
-    @patch('code_doc_gen.ai_analyzer.groq')
+    @patch('code_doc_gen.ai_providers.groq.groq')
     def test_call_groq_failure(self, mock_groq):
         """Test failed Groq API call."""
         mock_client = Mock()
@@ -140,36 +146,19 @@ class TestAIAnalyzer:
         self.config.config['ai']['enabled'] = True
         self.config.config['ai']['provider'] = 'groq'
         self.config.config['ai']['groq_api_key'] = 'test-key'
-        with patch('code_doc_gen.ai_analyzer.GROQ_AVAILABLE', True):
+        # Set max_retries to 1 to speed up test
+        self.config.config['ai']['max_retries'] = 1
+        
+        with patch('code_doc_gen.ai_providers.groq.GROQ_AVAILABLE', True):
             analyzer = AIAnalyzer(self.config)
-            response = analyzer._call_groq("test prompt")
+            response = analyzer._get_ai_response("test prompt")
             assert response is None
-    
-    @patch('code_doc_gen.ai_analyzer.groq')
-    def test_call_groq_success(self, mock_groq):
-        """Test successful Groq API call."""
-        # Mock Groq client and response
-        mock_client = Mock()
-        mock_response = Mock()
-        mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = '"""Adds two numbers together."""'
-        mock_client.chat.completions.create.return_value = mock_response
-        mock_groq.Groq.return_value = mock_client
-        
-        self.config.config['ai']['enabled'] = True
-        self.config.config['ai']['provider'] = 'groq'
-        self.config.config['ai']['groq_api_key'] = 'test-key'
-        
-        with patch('code_doc_gen.ai_analyzer.GROQ_AVAILABLE', True):
-            analyzer = AIAnalyzer(self.config)
-            response = analyzer._call_groq("test prompt")
-            assert response == '"""Adds two numbers together."""'
     
     def test_parse_ai_response_python(self):
         """Test parsing AI response for Python."""
         response = '"""Adds two numbers together."""'
         parsed = self.analyzer._parse_ai_response(response, "python")
-        assert parsed == '"""Adds two numbers together."""'
+        assert parsed == '"""\n    Adds two numbers together.\n"""'
     
     def test_parse_ai_response_cpp(self):
         """Test parsing AI response for C++."""
@@ -181,42 +170,44 @@ class TestAIAnalyzer:
         """Test parsing AI response with markdown formatting."""
         response = '```\n"""Adds two numbers together."""\n```'
         parsed = self.analyzer._parse_ai_response(response, "python")
-        assert parsed == '"""Adds two numbers together."""'
+        assert parsed == '"""\n    Adds two numbers together.\n"""'
     
     def test_analyze_function_ai_disabled(self):
         """Test function analysis when AI is disabled."""
         result = self.analyzer.analyze_function(self.sample_function, "python")
         assert result is None
     
-    @patch('code_doc_gen.ai_analyzer.groq')
-    def test_analyze_function_ai_success(self, mock_post):
+    @patch('code_doc_gen.ai_providers.groq.groq')
+    def test_analyze_function_ai_success(self, mock_groq):
         """Test successful AI function analysis."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = '"""Adds two numbers together."""'
+        mock_response.choices[0].message.content = 'Adds two numbers together.'
         mock_client.chat.completions.create.return_value = mock_response
-        mock_post.Groq.return_value = mock_client
+        mock_groq.Groq.return_value = mock_client
         
         self.config.config['ai']['enabled'] = True
         self.config.config['ai']['provider'] = 'groq'
         self.config.config['ai']['groq_api_key'] = 'test-key'
-        with patch('code_doc_gen.ai_analyzer.GROQ_AVAILABLE', True):
+        with patch('code_doc_gen.ai_providers.groq.GROQ_AVAILABLE', True):
             analyzer = AIAnalyzer(self.config)
             result = analyzer.analyze_function(self.sample_function, "python")
-            assert result == '"""Adds two numbers together."""'
+            assert result == '"""\n    Adds two numbers together.\n"""'
     
-    @patch('code_doc_gen.ai_analyzer.groq')
-    def test_analyze_function_ai_failure_fallback(self, mock_post):
+    @patch('code_doc_gen.ai_providers.groq.groq')
+    def test_analyze_function_ai_failure_fallback(self, mock_groq):
         """Test AI function analysis with fallback on failure."""
         mock_client = Mock()
         mock_client.chat.completions.create.side_effect = Exception("Network error")
-        mock_post.Groq.return_value = mock_client
+        mock_groq.Groq.return_value = mock_client
         
         self.config.config['ai']['enabled'] = True
         self.config.config['ai']['provider'] = 'groq'
         self.config.config['ai']['groq_api_key'] = 'test-key'
-        with patch('code_doc_gen.ai_analyzer.GROQ_AVAILABLE', True):
+        self.config.config['ai']['max_retries'] = 1
+        
+        with patch('code_doc_gen.ai_providers.groq.GROQ_AVAILABLE', True):
             analyzer = AIAnalyzer(self.config)
             result = analyzer.analyze_function(self.sample_function, "python")
             assert result is None  # Should return None for fallback
@@ -226,12 +217,13 @@ class TestAIAnalyzer:
         self.config.config['ai']['enabled'] = True
         self.config.config['ai']['provider'] = 'groq'
         self.config.config['ai']['groq_api_key'] = 'test-key'
-        with patch('code_doc_gen.ai_analyzer.GROQ_AVAILABLE', True):
-            analyzer = AIAnalyzer(self.config)
-            info = analyzer.get_provider_info()
-            assert info['enabled'] is True
-            assert info['provider'] == 'groq'
-            assert info['available'] is True
+        with patch('code_doc_gen.ai_providers.groq.GROQ_AVAILABLE', True):
+            with patch('code_doc_gen.ai_providers.groq.groq.Groq', return_value=Mock()):
+                analyzer = AIAnalyzer(self.config)
+                info = analyzer.get_provider_info()
+                assert info['enabled'] is True
+                assert info['provider'] == 'groq'
+                assert info['available'] is True
     
     def test_get_provider_info_groq(self):
         """Test getting provider information for Groq."""
@@ -239,12 +231,13 @@ class TestAIAnalyzer:
         self.config.config['ai']['provider'] = 'groq'
         self.config.config['ai']['groq_api_key'] = 'test-key'
         
-        with patch('code_doc_gen.ai_analyzer.GROQ_AVAILABLE', True):
-            analyzer = AIAnalyzer(self.config)
-            info = analyzer.get_provider_info()
-            
-            assert info['enabled'] is True
-            assert info['provider'] == 'groq'
-            assert info['available'] is True
-            assert info['groq_available'] is True
-            assert info['api_key_configured'] is True 
+        with patch('code_doc_gen.ai_providers.groq.GROQ_AVAILABLE', True):
+            with patch('code_doc_gen.ai_providers.groq.groq.Groq', return_value=Mock()):
+                analyzer = AIAnalyzer(self.config)
+                info = analyzer.get_provider_info()
+                
+                assert info['enabled'] is True
+                assert info['provider'] == 'groq'
+                assert info['available'] is True
+                assert info['groq_available'] is True
+                assert info['api_key_configured'] is True
