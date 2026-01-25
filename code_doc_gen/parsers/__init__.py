@@ -97,6 +97,18 @@ class ParserFactory:
             self._parsers['typescript'] = TypeScriptParser(self.config)
         except ImportError:
             print("Warning: TypeScript parser not available")
+
+        try:
+            from .go_parser import GoParser
+            self._parsers['go'] = GoParser(self.config)
+        except ImportError:
+            print("Warning: Go parser not available")
+
+        try:
+            from .rust_parser import RustParser
+            self._parsers['rust'] = RustParser(self.config)
+        except ImportError:
+            print("Warning: Rust parser not available")
     
     def get_parser(self, language: str) -> BaseParser:
         """

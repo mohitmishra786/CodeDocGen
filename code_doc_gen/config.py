@@ -67,6 +67,18 @@ class Config:
                 "param": " * @param {name} {description}",
                 "return": " * @returns {description}",
                 "detailed": "/**\n * {description}\n *\n{params}{returns}\n */"
+            },
+            "go": {
+                "brief": "// {description}",
+                "param": "// {name}: {description}",
+                "return": "// returns: {description}",
+                "detailed": "// {description}\n//\n{params}{returns}"
+            },
+            "rust": {
+                "brief": "/// {description}",
+                "param": "/// * `{name}` - {description}",
+                "return": "/// * Returns {description}",
+                "detailed": "/// {description}\n///\n{params}{returns}"
             }
         },
         "rules": [
@@ -140,7 +152,10 @@ class Config:
             "c++": [".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".hh", ".hxx"],
             "python": [".py", ".pyx", ".pxd"],
             "java": [".java"],
-            "javascript": [".js", ".mjs", ".cjs", ".ts", ".tsx"]
+            "javascript": [".js", ".mjs", ".cjs", ".ts", ".tsx"],
+            "typescript": [".ts", ".tsx"],
+            "go": [".go"],
+            "rust": [".rs"]
         },
         "ignore_patterns": [
             "*/node_modules/*",

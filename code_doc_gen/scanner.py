@@ -373,5 +373,9 @@ class RepositoryScanner:
             return 'javascript'
         elif suffix in ['.ts', '.tsx']:
             return 'typescript'
+        elif suffix == '.go':
+            return 'go'
+        elif suffix == '.rs':
+            return 'rust'
         else:
             return 'python'  # Default fallback
