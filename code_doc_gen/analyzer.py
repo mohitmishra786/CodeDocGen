@@ -18,6 +18,11 @@ from .ast_analyzer import ASTAnalyzer
 from .ai_analyzer import AIAnalyzer
 import logging
 
+try:
+    import spacy
+    SPACY_AVAILABLE = True
+except ImportError:
+    SPACY_AVAILABLE = False
 
 class IntelligentAnalyzer:
     """Intelligent analyzer that uses AI, NLTK, and regex-based analysis."""
@@ -34,6 +39,21 @@ class IntelligentAnalyzer:
         
         # Ensure NLTK resources are available
         self._ensure_nltk_resources()
+        
+        # Initialize SpaCy if enabled and available
+        self.nlp = None
+        if config.get_nltk_config().get('enable_spacy', False) and SPACY_AVAILABLE:
+            try:
+                self.nlp = spacy.load("en_core_web_sm")
+                self.logger.info("SpaCy initialized successfully")
+            except OSError:
+                self.logger.warning("SpaCy model 'en_core_web_sm' not found. Downloading...")
+                try:
+                    from spacy.cli import download
+                    download("en_core_web_sm")
+                    self.nlp = spacy.load("en_core_web_sm")
+                except Exception as e:
+                    self.logger.warning(f"Failed to download/load SpaCy model: {e}")
         
         # Patterns for function name analysis
         self.camel_case_pattern = re.compile(r'([A-Z][a-z0-9]+)')
@@ -229,6 +249,24 @@ class IntelligentAnalyzer:
         words = re.split(r'_|(?=[A-Z])', name)
         if not words:
             return "processes", "data"
+        
+        # Clean words (remove empty strings)
+        words = [w.lower() for w in words if w]
+        sentence = " ".join(words)
+        
+        # Use SpaCy if available
+        if self.nlp:
+            try:
+                doc = self.nlp(sentence)
+                verbs = [token.text for token in doc if token.pos_ == "VERB"]
+                nouns = [token.text for token in doc if token.pos_ == "NOUN"]
+                
+                verb = verbs[0] if verbs else (words[0] if words else "processes")
+                obj = " ".join(nouns) if nouns else (" ".join(words[1:]) if len(words) > 1 else "data")
+                
+                return verb, obj
+            except Exception as e:
+                self.logger.debug(f"SpaCy analysis failed for {name}: {e}")
         
         try:
             # Use NLTK for POS tagging

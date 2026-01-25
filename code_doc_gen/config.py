@@ -55,6 +55,18 @@ class Config:
                 "return": " * @return {description}",
                 "throws": " * @throws {exception} {description}",
                 "detailed": "/**\n * {description}\n *\n{params}{returns}{throws}\n */"
+            },
+            "javascript": {
+                "brief": "/**\n * {description}\n */",
+                "param": " * @param {name} {description}",
+                "return": " * @returns {description}",
+                "detailed": "/**\n * {description}\n *\n{params}{returns}\n */"
+            },
+            "typescript": {
+                "brief": "/**\n * {description}\n */",
+                "param": " * @param {name} {description}",
+                "return": " * @returns {description}",
+                "detailed": "/**\n * {description}\n *\n{params}{returns}\n */"
             }
         },
         "rules": [
@@ -159,8 +171,19 @@ class Config:
             "provider": "groq",
             "groq_api_key": "",  # Will be loaded from environment variable
             "openai_api_key": "",  # Will be loaded from environment variable
+            "azure_openai_api_key": "",  # Will be loaded from environment variable
+            "azure_endpoint": "",  # Will be loaded from environment variable
+            "azure_deployment": "gpt-4",  # Default deployment name
+            "azure_api_version": "2023-05-15",
             "max_retries": 3,
-            "retry_delay": 1.0
+            "retry_delay": 1.0,
+            "models": {
+                "groq": ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
+                "openai": "gpt-4o-mini",
+                "azure_openai": "gpt-4", # Placeholder, usually uses azure_deployment
+                "anthropic": "claude-3-haiku-20240307",
+                "mistral": "mistral-small-latest"
+            }
         }
     }
     
@@ -318,13 +341,60 @@ class Config:
         return self.config.get("ai", {}) 
     
     def _load_env_api_keys(self) -> None:
-        """Load API keys from environment variables."""
-        # Environment variables take precedence over config file values
-        groq_key = os.getenv('GROQ_API_KEY')
-        openai_key = os.getenv('OPENAI_API_KEY')
+        """Load API keys from environment variables or secure credential store."""
         
-        if groq_key:
-            self.config['ai']['groq_api_key'] = groq_key
+        # 1. Try Environment variables (Highest priority)
+        env_keys = {
+            'groq_api_key': os.getenv('GROQ_API_KEY'),
+            'openai_api_key': os.getenv('OPENAI_API_KEY'),
+            'azure_openai_api_key': os.getenv('AZURE_OPENAI_API_KEY'),
+            'anthropic_api_key': os.getenv('ANTHROPIC_API_KEY'),
+            'mistral_api_key': os.getenv('MISTRAL_API_KEY')
+        }
         
-        if openai_key:
-            self.config['ai']['openai_api_key'] = openai_key 
+        # 2. Try Credential Manager (Keyring) if not in env
+        try:
+            from .credential_manager import CredentialManager
+            cred_manager = CredentialManager()
+            
+            providers_map = {
+                'groq_api_key': 'groq',
+                'openai_api_key': 'openai',
+                'azure_openai_api_key': 'azure_openai',
+                'anthropic_api_key': 'anthropic',
+                'mistral_api_key': 'mistral'
+            }
+            
+            for config_key, provider_name in providers_map.items():
+                if not env_keys.get(config_key):
+                    stored_key = cred_manager.get_key(provider_name)
+                    if stored_key:
+                        env_keys[config_key] = stored_key
+                        
+        except ImportError:
+            pass
+        except Exception as e:
+            print(f"Warning: Failed to access credential manager: {e}")
+
+        # Update config
+        if env_keys['groq_api_key']:
+            self.config['ai']['groq_api_key'] = env_keys['groq_api_key']
+        
+        if env_keys['openai_api_key']:
+            self.config['ai']['openai_api_key'] = env_keys['openai_api_key']
+            
+        if env_keys['azure_openai_api_key']:
+            self.config['ai']['azure_openai_api_key'] = env_keys['azure_openai_api_key']
+            
+        if os.getenv('AZURE_OPENAI_ENDPOINT'):
+            self.config['ai']['azure_endpoint'] = os.getenv('AZURE_OPENAI_ENDPOINT')
+            
+        if os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME'):
+            self.config['ai']['azure_deployment'] = os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME')
+            
+        if env_keys['anthropic_api_key']:
+            self.config['ai']['anthropic_api_key'] = env_keys['anthropic_api_key']
+            
+        if env_keys['mistral_api_key']:
+            self.config['ai']['mistral_api_key'] = env_keys['mistral_api_key']
+ 

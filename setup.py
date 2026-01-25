@@ -54,6 +54,8 @@ setup(
         "pytest>=7.0.0",
         "typing-extensions>=4.0.0",
         "python-dotenv>=1.0.0",
+        "tqdm>=4.65.0",
+        "keyring>=24.0.0",
     ],
     extras_require={
         "dev": [
@@ -73,11 +75,19 @@ setup(
         "ai": [
             "groq>=0.4.0",
             "openai>=1.0.0",
+            "anthropic>=0.18.0",
+            "mistralai>=0.1.0",
+        ],
+        "nlp": [
+            "spacy>=3.0.0",
         ],
         "all": [
             "clang>=6.0.0",
             "groq>=0.4.0",
             "openai>=1.0.0",
+            "anthropic>=0.18.0",
+            "mistralai>=0.1.0",
+            "spacy>=3.0.0",
         ],
     },
     entry_points={

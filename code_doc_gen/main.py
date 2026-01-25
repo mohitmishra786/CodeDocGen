@@ -185,8 +185,8 @@ Examples:
     
     parser.add_argument(
         '--ai-provider',
-        choices=['groq', 'openai'],
-        help='AI provider to use (groq: requires API key; openai: requires API key)'
+        choices=['groq', 'openai', 'azure_openai', 'anthropic', 'mistral'],
+        help='AI provider to use (requires API key)'
     )
     
     parser.add_argument(
@@ -197,6 +197,42 @@ Examples:
     parser.add_argument(
         '--openai-api-key',
         help='OpenAI API key (get from https://platform.openai.com/account/api-keys)'
+    )
+    
+    parser.add_argument(
+        '--azure-openai-api-key',
+        help='Azure OpenAI API key'
+    )
+    
+    parser.add_argument(
+        '--azure-endpoint',
+        help='Azure OpenAI endpoint'
+    )
+    
+    parser.add_argument(
+        '--azure-deployment',
+        help='Azure OpenAI deployment name'
+    )
+    
+    parser.add_argument(
+        '--anthropic-api-key',
+        help='Anthropic API key'
+    )
+    
+    parser.add_argument(
+        '--mistral-api-key',
+        help='Mistral API key'
+    )
+    
+    parser.add_argument(
+        '--clang-path',
+        help='Path to libclang library file or directory (for C++ parsing)'
+    )
+    
+    parser.add_argument(
+        '--enable-spacy',
+        action='store_true',
+        help='Enable SpaCy for enhanced NLP analysis (requires spacy installed)'
     )
     
     parser.add_argument(
@@ -211,6 +247,12 @@ Examples:
         help='Automatically commit generated documentation (requires Git repository)'
     )
     
+    # Credential Management
+    parser.add_argument(
+        '--set-key',
+        help='Securely store an API key for a provider (interactive prompt). Usage: --set-key [groq|openai|anthropic|mistral]'
+    )
+    
     parser.add_argument(
         '--version',
         action='version',
@@ -220,6 +262,18 @@ Examples:
     args = parser.parse_args()
     
     try:
+        # Handle credential management first
+        if args.set_key:
+            from .credential_manager import CredentialManager
+            provider = args.set_key.lower()
+            if provider not in ['groq', 'openai', 'azure_openai', 'anthropic', 'mistral']:
+                print(f"Error: Unknown provider '{provider}'. Supported: groq, openai, azure_openai, anthropic, mistral")
+                return 1
+            
+            manager = CredentialManager()
+            manager.prompt_and_set_key(provider)
+            return 0
+
         # Update logging level if verbose flag is set
         if args.verbose:
             update_logging_level(True)
@@ -238,7 +292,7 @@ Examples:
         config = Config(config_path)
         
         # Configure AI settings from command line arguments
-        if args.enable_ai or args.ai_provider or args.groq_api_key or args.openai_api_key:
+        if args.enable_ai or args.ai_provider or args.groq_api_key or args.openai_api_key or args.azure_openai_api_key or args.anthropic_api_key or args.mistral_api_key:
             ai_config = config.get_ai_config()
             
             if args.enable_ai:
@@ -252,15 +306,38 @@ Examples:
             
             if args.openai_api_key:
                 ai_config['openai_api_key'] = args.openai_api_key
+                
+            if args.azure_openai_api_key:
+                ai_config['azure_openai_api_key'] = args.azure_openai_api_key
+                
+            if args.azure_endpoint:
+                ai_config['azure_endpoint'] = args.azure_endpoint
+                
+            if args.azure_deployment:
+                ai_config['azure_deployment'] = args.azure_deployment
+                
+            if args.anthropic_api_key:
+                ai_config['anthropic_api_key'] = args.anthropic_api_key
+                
+            if args.mistral_api_key:
+                ai_config['mistral_api_key'] = args.mistral_api_key
             
             # Update config with AI settings
             config.config['ai'] = ai_config
+            
+        # Configure clang path
+        if args.clang_path:
+            config.config['clang_path'] = args.clang_path
+            
+        # Configure SpaCy
+        if args.enable_spacy:
+            config.config['nltk']['enable_spacy'] = True
         
         # Initialize scanner AFTER AI configuration is updated
         scanner = RepositoryScanner(config)
         
         # Log AI configuration AFTER scanner is created
-        if args.enable_ai or args.ai_provider or args.groq_api_key or args.openai_api_key:
+        if args.enable_ai or args.ai_provider or args.groq_api_key or args.openai_api_key or args.anthropic_api_key or args.mistral_api_key:
             from .ai_analyzer import AIAnalyzer
             ai_analyzer = AIAnalyzer(config)
             provider_info = ai_analyzer.get_provider_info()
