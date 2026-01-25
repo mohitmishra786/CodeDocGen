@@ -370,6 +370,10 @@ Examples:
         
         logger.info(f"Found {len(file_paths)} files to process")
         
+        # Initialize metrics
+        from .metrics import MetricsCalculator
+        metrics = MetricsCalculator()
+        
         # Process files
         total_functions = 0
         processed_files = 0
@@ -379,20 +383,7 @@ Examples:
                 logger.info(f"Processing {file_path}")
                 
                 # Parse file
-                functions = scanner.parse_file(file_path, args.lang)
-                
-                if not functions:
-                    logger.warning(f"No functions found in {file_path}")
-                    continue
-                
-                logger.info(f"Found {len(functions)} functions in {file_path}")
-                total_functions += len(functions)
-                
-                # Generate documentation
-                from .generator import DocumentationGenerator
-                generator = DocumentationGenerator(config)
-                
-                # Determine language for this file
+                # Determine language first
                 file_lang = args.lang
                 if not file_lang:
                     # Auto-detect language based on file extension
@@ -404,9 +395,31 @@ Examples:
                         file_lang = 'java'
                     elif file_path.suffix.lower() in ['.js', '.mjs', '.cjs']:
                         file_lang = 'javascript'
+                    elif file_path.suffix.lower() in ['.ts', '.tsx']:
+                        file_lang = 'typescript'
+                    elif file_path.suffix.lower() == '.go':
+                        file_lang = 'go'
+                    elif file_path.suffix.lower() == '.rs':
+                        file_lang = 'rust'
                     else:
                         logger.warning(f"Could not determine language for {file_path}")
                         continue
+
+                functions = scanner.parse_file(file_path, file_lang)
+                
+                if not functions:
+                    logger.warning(f"No functions found in {file_path}")
+                    continue
+                
+                # Update metrics
+                metrics.update(functions, file_lang)
+                
+                logger.info(f"Found {len(functions)} functions in {file_path}")
+                total_functions += len(functions)
+                
+                # Generate documentation
+                from .generator import DocumentationGenerator
+                generator = DocumentationGenerator(config)
                 
                 documentation = generator.generate_documentation(functions, file_lang)
                 
@@ -448,8 +461,7 @@ Examples:
         
         # Summary
         logger.info(f"Processing complete!")
-        logger.info(f"Processed {processed_files} files")
-        logger.info(f"Found {total_functions} functions")
+        print(metrics.generate_report())
         
         if args.inplace:
             logger.info("Files have been modified in place (backups created with .bak extension)")
