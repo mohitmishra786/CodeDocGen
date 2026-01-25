@@ -4,9 +4,9 @@ Rust parser for CodeDocGen.
 import re
 from pathlib import Path
 from typing import List, Optional
-from .. import BaseParser
-from ...models import Function, Parameter, FunctionBody, ParsedFile, FunctionType
-from ...config import Config
+from . import BaseParser
+from ..models import Function, Parameter, FunctionBody, ParsedFile, FunctionType
+from ..config import Config
 
 class RustParser(BaseParser):
     """Parser for Rust source files (.rs)."""
@@ -20,7 +20,7 @@ class RustParser(BaseParser):
     def parse_file(self, file_path: Path) -> ParsedFile:
         try:
             source = file_path.read_text(encoding='utf-8')
-        except Exception:
+        except (OSError, UnicodeDecodeError):
             return ParsedFile(file_path=str(file_path), language='rust')
 
         parsed_file = ParsedFile(file_path=str(file_path), language='rust')
@@ -66,7 +66,7 @@ class RustParser(BaseParser):
             if not part:
                 continue
                 
-            if part == 'self' or part == '&self' or part == '&mut self':
+            if part in ('self', '&self', 'mut self', '&mut self'):
                 params.append(Parameter(name='self', type='Self'))
                 continue
                 

@@ -4,9 +4,9 @@ Go parser for CodeDocGen.
 import re
 from pathlib import Path
 from typing import List, Optional
-from .. import BaseParser
-from ...models import Function, Parameter, FunctionBody, ParsedFile, FunctionType
-from ...config import Config
+from . import BaseParser
+from ..models import Function, Parameter, FunctionBody, ParsedFile, FunctionType
+from ..config import Config
 
 class GoParser(BaseParser):
     """Parser for Go source files (.go)."""
@@ -16,6 +16,41 @@ class GoParser(BaseParser):
 
     def can_parse(self, file_path: Path) -> bool:
         return file_path.suffix.lower() == '.go'
+
+    def _extract_function_source(self, source: str, start_index: int) -> str:
+        """
+        Extract the full function source by matching braces.
+        """
+        brace_count = 0
+        in_brace = False
+        
+        # Find the opening brace first
+        current_idx = start_index
+        while current_idx < len(source):
+            if source[current_idx] == '{':
+                brace_count += 1
+                in_brace = True
+                current_idx += 1
+                break
+            current_idx += 1
+            
+        if not in_brace:
+            return ""
+            
+        # Count braces until balanced
+        while current_idx < len(source):
+            char = source[current_idx]
+            if char == '{':
+                brace_count += 1
+            elif char == '}':
+                brace_count -= 1
+                
+            current_idx += 1
+            
+            if brace_count == 0:
+                break
+                
+        return source[start_index:current_idx]
 
     def parse_file(self, file_path: Path) -> ParsedFile:
         try:
@@ -54,6 +89,11 @@ class GoParser(BaseParser):
                 else:
                     class_name = parts[0].replace('*', '')
 
+            # Extract actual source code
+            func_source = self._extract_function_source(source, match.start())
+            if not func_source:
+                func_source = match.group(0)
+
             func = Function(
                 name=name,
                 parameters=params,
@@ -61,7 +101,7 @@ class GoParser(BaseParser):
                 function_type=func_type,
                 class_name=class_name,
                 body=FunctionBody(),
-                source_code=source # Simplified, ideally slice the function body
+                source_code=func_source
             )
             parsed_file.add_function(func)
 
@@ -72,28 +112,8 @@ class GoParser(BaseParser):
             return []
             
         params = []
-        # Go params: "a, b int, c string" -> a int, b int, c string
-        # This naive parser handles simple cases
-        parts = params_str.split(',')
-        
-        # This logic is tricky for Go because types come after names and can be grouped
-        # e.g. "x, y int"
-        # We'll use a simplified split for now
-        
-        # Better approach: split by comma, but need to handle type association
-        # For prototype, we'll just extract names if possible or full string
-        
-        # Let's try to normalize "x, y int" to "x int, y int" logic roughly?
-        # Actually complex regex needed. 
-        # Fallback: Just separate by commas and take the first word as name
-        
-        current_names = []
-        
-        # Rough tokenization
-        tokens = params_str.split()
-        # This is hard without a proper parser. 
-        # Let's just create generic parameters for now from comma split
-        
+        # Go parameter parsing is complex due to grouped types (e.g., "x, y int")
+        # This simplified parser handles basic "name type" patterns
         for part in params_str.split(','):
             part = part.strip()
             if not part:

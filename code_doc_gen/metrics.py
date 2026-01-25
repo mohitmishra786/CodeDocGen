@@ -1,8 +1,12 @@
 """
 Metrics calculation and reporting for CodeDocGen.
 """
-from typing import List, Dict, Any
+from typing import List, Dict, Any, TypedDict
 from .models import Function
+
+class LanguageStats(TypedDict):
+    total: int
+    documented: int
 
 class MetricsCalculator:
     """Calculates and reports documentation coverage metrics."""
@@ -11,7 +15,7 @@ class MetricsCalculator:
         self.total_functions = 0
         self.documented_functions = 0
         self.files_processed = 0
-        self.by_language = {}
+        self.by_language: Dict[str, LanguageStats] = {}
 
     def update(self, functions: List[Function], language: str):
         """Update metrics with functions from a file."""

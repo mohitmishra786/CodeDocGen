@@ -187,8 +187,8 @@ class CppParser(BaseParser):
                                 return
                         if _try_set_and_probe("path", native_dir2):
                             return
-        except Exception:
-            pass
+        except Exception as e:
+            logging.getLogger(__name__).debug(f"PyPI libclang package probe failed: {e}")
 
         # 4) ctypes-based search for common library names
         for name in ("clang", "libclang"):
@@ -199,8 +199,8 @@ class CppParser(BaseParser):
                     # Otherwise, fall back to set_library_file with the returned value
                     if _try_set_and_probe("file", found):
                         return
-            except Exception:
-                pass
+            except Exception as e:
+                logging.getLogger(__name__).debug(f"ctypes library search failed for {name}: {e}")
 
         # 5) OS-specific common locations
         system_name = platform.system().lower()

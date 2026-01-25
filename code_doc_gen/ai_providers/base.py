@@ -5,7 +5,7 @@ import logging
 class AIProvider(ABC):
     """Abstract base class for AI providers."""
     
-    def __init__(self, api_key: str, model: str = None):
+    def __init__(self, api_key: str, model: Optional[str] = None):
         self.api_key = api_key
         self.model = model
         self.logger = logging.getLogger(self.__class__.__name__)

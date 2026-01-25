@@ -152,7 +152,7 @@ class Config:
             "c++": [".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".hh", ".hxx"],
             "python": [".py", ".pyx", ".pxd"],
             "java": [".java"],
-            "javascript": [".js", ".mjs", ".cjs", ".ts", ".tsx"],
+            "javascript": [".js", ".mjs", ".cjs"],
             "typescript": [".ts", ".tsx"],
             "go": [".go"],
             "rust": [".rs"]
@@ -194,10 +194,10 @@ class Config:
             "retry_delay": 1.0,
             "models": {
                 "groq": ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
-                "openai": "gpt-4o-mini",
-                "azure_openai": "gpt-4", # Placeholder, usually uses azure_deployment
-                "anthropic": "claude-3-haiku-20240307",
-                "mistral": "mistral-small-latest"
+                "openai": ["gpt-4o-mini"],
+                "azure_openai": ["gpt-4"], # Placeholder, usually uses azure_deployment
+                "anthropic": ["claude-3-haiku-20240307"],
+                "mistral": ["mistral-small-latest"]
             }
         }
     }
@@ -210,7 +210,7 @@ class Config:
             config_path: Path to custom configuration file
         """
         # Use deep copy to avoid cross-test/shared-mutation of nested dicts
-        self.config = copy.deepcopy(self.DEFAULT_CONFIG)
+        self.config: Dict[str, Any] = copy.deepcopy(self.DEFAULT_CONFIG)
         
         if config_path and config_path.exists():
             self.load_config(config_path)
@@ -388,8 +388,8 @@ class Config:
                         
         except ImportError:
             pass
-        except Exception as e:
-            print(f"Warning: Failed to access credential manager: {e}")
+        except Exception:
+            logging.getLogger(__name__).debug("Failed to access credential manager")
 
         # Update config
         if env_keys['groq_api_key']:

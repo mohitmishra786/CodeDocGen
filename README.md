@@ -4,9 +4,9 @@ A command-line tool and library that automatically generates Doxygen-style comme
 
 ## Features
 
-- **AI-Powered Comment Generation**: Uses Groq, OpenAI, Anthropic (Claude), or Mistral for intelligent, context-aware documentation
+- **AI-Powered Comment Generation**: Uses Groq, OpenAI, Anthropic (Claude), Mistral, or Azure OpenAI for intelligent, context-aware documentation
 - **Smart Fallback System**: Falls back to NLTK/SpaCy-based analysis when AI is unavailable or fails
-- **Multi-language Support**: C/C++ (using libclang), Python (using ast), Java (regex/AI), JavaScript (regex/AI)
+- **Multi-language Support**: C/C++ (using libclang), Python (using ast), Java (regex/AI), JavaScript (regex/AI), TypeScript (regex/AI), Go (regex/AI), Rust (regex/AI)
 - **Smart Function Analysis**: Analyzes function bodies to detect recursion, loops, conditionals, regex usage, API calls, and file operations
 - **Git Integration**: Process only changed files with `--changes-only` flag and auto-commit documentation with `--auto-commit`
 - **Context-Aware Descriptions**: Generates specific, meaningful descriptions instead of generic templates
@@ -101,17 +101,21 @@ Create a `config.yaml` file to customize documentation generation:
 # AI configuration
 ai:
   enabled: true
-  provider: "groq"  # groq, openai, anthropic, mistral
+  provider: "groq"  # groq, openai, anthropic, mistral, azure_openai
   fallback_providers: ["openai", "anthropic"]
   groq_api_key: ""      # Or set GROQ_API_KEY env var
   openai_api_key: ""    # Or set OPENAI_API_KEY env var
   anthropic_api_key: "" # Or set ANTHROPIC_API_KEY env var
   mistral_api_key: ""   # Or set MISTRAL_API_KEY env var
+  azure_openai_api_key: "" # Or set AZURE_OPENAI_API_KEY env var
+  azure_endpoint: ""    # Or set AZURE_OPENAI_ENDPOINT env var
+  azure_deployment: ""  # Or set AZURE_OPENAI_DEPLOYMENT_NAME env var
   models:
     groq: ["llama3-8b-8192", "llama3.1-8b-instant"]
     openai: "gpt-4o-mini"
     anthropic: "claude-3-haiku-20240307"
     mistral: "mistral-small-latest"
+    azure_openai: "gpt-4" # Placeholder, usually uses azure_deployment
 
 # C++ Configuration
 cpp:
@@ -130,6 +134,9 @@ GROQ_API_KEY=your_key
 OPENAI_API_KEY=your_key
 ANTHROPIC_API_KEY=your_key
 MISTRAL_API_KEY=your_key
+AZURE_OPENAI_API_KEY=your_key
+AZURE_OPENAI_ENDPOINT=your_endpoint
+AZURE_OPENAI_DEPLOYMENT_NAME=your_deployment_name
 ```
 
 ## Supported Languages
@@ -145,6 +152,10 @@ MISTRAL_API_KEY=your_key
 - Enhanced regex-based parsing
 - AI-powered context understanding
 
+### TypeScript/Go/Rust
+- Regex-based parsing
+- AI-powered context understanding
+
 ## AI Providers
 
 CodeDocGen supports:
@@ -152,6 +163,7 @@ CodeDocGen supports:
 2. **OpenAI** (GPT-4o, GPT-3.5)
 3. **Anthropic** (Claude 3 Haiku/Opus/Sonnet)
 4. **Mistral** (Mistral Small/Large)
+5. **Azure OpenAI** (Enterprise)
 
 ## VSCode Extension
 

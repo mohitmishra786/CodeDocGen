@@ -14,7 +14,7 @@ from pathlib import Path
 
 from .models import Function, Parameter
 from .config import Config
-from .ai_providers import GroqProvider, OpenAIProvider, AnthropicProvider, MistralProvider
+from .ai_providers import AIProvider, GroqProvider, OpenAIProvider, AnthropicProvider, MistralProvider
 
 class AIAnalyzer:
     """AI-powered analyzer for generating intelligent function comments."""
@@ -63,17 +63,17 @@ class AIAnalyzer:
         })
         
         # Initialize providers map
-        self.providers = {}
+        self.providers: Dict[str, AIProvider] = {}
         
-    def _get_provider(self, name: str):
+    def _get_provider(self, name: str) -> Optional[AIProvider]:
         """Lazy load provider instance."""
         if name in self.providers:
             return self.providers[name]
             
-        key = self.api_keys.get(name)
+        key = self.api_keys.get(name, "")
         model = self.models_config.get(name)
         
-        provider = None
+        provider: Optional[AIProvider] = None
         if name == 'groq':
             provider = GroqProvider(key, model)
         elif name == 'openai':
@@ -115,8 +115,11 @@ class AIAnalyzer:
             if not raw_response:
                 return None
             return self._parse_ai_response(raw_response, language)
-        except Exception as e:
+        except (ValueError, AttributeError, RuntimeError) as e:
             self.logger.warning(f"AI analysis failed for function {function.name}: {e}")
+            return None
+        except Exception:
+            self.logger.exception(f"Unexpected error during AI analysis for {function.name}")
             return None
 
     def _get_ai_response(self, prompt: str) -> Optional[str]:

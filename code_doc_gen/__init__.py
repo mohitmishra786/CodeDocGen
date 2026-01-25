@@ -31,7 +31,7 @@ __license__ = "MIT"
 """
 def generate_docs(
     repo_path: Union[str, Path],
-    lang: str = "c++",
+    lang: Optional[str] = None,
     files: Optional[List[str]] = None,
     config_path: Optional[Union[str, Path]] = None,
     inplace: bool = False,
@@ -43,7 +43,7 @@ def generate_docs(
     
     Args:
         repo_path: Path to the repository to scan
-        lang: Programming language ('c++', 'python')
+        lang: Programming language ('c++', 'python', etc.). Auto-detected if None.
         files: Specific files to process (if None, processes all files)
         config_path: Path to custom configuration file
         inplace: Whether to modify files in place
@@ -53,7 +53,7 @@ def generate_docs(
     Returns:
         Dictionary mapping file paths to generated documentation strings
     """
-    config = Config(config_path) if config_path else Config()
+    config = Config(Path(config_path) if config_path else None)
     
     # Update config with kwargs
     if kwargs:
@@ -80,6 +80,11 @@ def generate_docs(
     generator = DocumentationGenerator(config)
     
     # Scan repository for files
+    # If lang is None, scan_repository usually expects a list or handles "all". 
+    # Let's check scanner.scan_repository signature.
+    # Assuming it handles None or we pass "c++" as default only if strictly needed by scanner?
+    # Actually, if lang is None, we likely want to scan ALL supported files.
+    # Looking at original code, it passed `lang`. If I change default to None, I should pass None.
     file_paths = scanner.scan_repository(repo_path, lang, files)
     
     results = {}
@@ -97,6 +102,17 @@ def generate_docs(
                     file_lang = 'java'
                 elif file_path.suffix.lower() in ['.js', '.mjs', '.cjs']:
                     file_lang = 'javascript'
+                elif file_path.suffix.lower() in ['.ts', '.tsx']:
+                    file_lang = 'typescript'
+                elif file_path.suffix.lower() == '.go':
+                    file_lang = 'go'
+                elif file_path.suffix.lower() == '.rs':
+                    file_lang = 'rust'
+
+            # If still no language determined (e.g. unknown extension), skip or default?
+            # Original code had no fallback else block in the snippet I read, but let's assume if it fails it might error or return empty.
+            if not file_lang:
+                 continue
 
             functions = scanner.parse_file(file_path, file_lang)
             

@@ -5,4 +5,4 @@ from .anthropic import AnthropicProvider
 from .mistral import MistralProvider
 from .azure_openai import AzureOpenAIProvider
 
-__all__ = ['AIProvider', 'GroqProvider', 'OpenAIProvider', 'AnthropicProvider', 'MistralProvider', 'AzureOpenAIProvider']
+__all__ = ['AIProvider', 'AnthropicProvider', 'AzureOpenAIProvider', 'GroqProvider', 'MistralProvider', 'OpenAIProvider']

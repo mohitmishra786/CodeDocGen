@@ -56,11 +56,12 @@ class SetupWizard:
             
             # Configure API Key
             print(f"\n--- Step 2: Configure {provider} Credentials ---")
-            print(f"We can securely store your API key in your system keychain.")
+            print("We can securely store your API key in your system keychain.")
             
             if self._ask_yes_no(f"Do you want to set the API key for {provider} now?", default=True):
                 self.cred_manager.prompt_and_set_key(provider)
-                print(f"API key for {provider} stored securely.")
+                if self.cred_manager.get_key(provider):
+                    print(f"API key for {provider} stored securely.")
                 
             # Provider specific settings
             if provider == 'azure_openai':
@@ -102,10 +103,22 @@ class SetupWizard:
                 return False
             print("Please answer yes or no.")
 
-    def _save_config(self, path: str) -> None:
-        """Save configuration to YAML file."""
+    def _save_config(self, path_str: str) -> None:
+        """Save configuration to YAML file with validation."""
+        path = Path(path_str)
+        
+        # Check if file exists
+        if path.exists():
+            if not self._ask_yes_no(f"File {path_str} already exists. Overwrite?", default=False):
+                print("Save cancelled.")
+                return
+
+        # Ensure parent directory exists
         try:
+            path.parent.mkdir(parents=True, exist_ok=True)
             with open(path, 'w', encoding='utf-8') as f:
                 yaml.dump(self.config.config, f, default_flow_style=False, sort_keys=False)
-        except Exception as e:
-            print(f"Error saving configuration: {e}")
+            print(f"Configuration saved to {path_str}")
+        except Exception:
+            self.logger.exception(f"Error saving configuration to {path_str}")
+            print(f"Error: Could not save configuration to {path_str}")

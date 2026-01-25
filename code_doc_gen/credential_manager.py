@@ -1,6 +1,7 @@
 import keyring
 import getpass
 import logging
+from typing import Optional
 
 SERVICE_NAME = "CodeDocGen"
 
@@ -21,10 +22,10 @@ class CredentialManager:
         try:
             keyring.set_password(SERVICE_NAME, f"{provider}_api_key", key)
             self.logger.info(f"Successfully stored API key for {provider}")
-        except Exception as e:
-            self.logger.error(f"Failed to store API key for {provider}: {e}")
+        except Exception:
+            self.logger.exception(f"Failed to store API key for {provider}")
 
-    def get_key(self, provider: str) -> str:
+    def get_key(self, provider: str) -> Optional[str]:
         """
         Retrieve a stored API key.
         
@@ -50,8 +51,8 @@ class CredentialManager:
         try:
             keyring.delete_password(SERVICE_NAME, f"{provider}_api_key")
             self.logger.info(f"Deleted API key for {provider}")
-        except Exception as e:
-            self.logger.error(f"Failed to delete API key for {provider}: {e}")
+        except Exception:
+            self.logger.exception(f"Failed to delete API key for {provider}")
 
     def prompt_and_set_key(self, provider: str) -> None:
         """Prompt user for key and store it."""
@@ -61,3 +62,4 @@ class CredentialManager:
             self.set_key(provider, key)
         else:
             print("No key entered.")
+

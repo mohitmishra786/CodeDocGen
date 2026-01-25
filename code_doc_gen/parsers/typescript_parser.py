@@ -4,18 +4,66 @@ TypeScript parser for CodeDocGen.
 import re
 from pathlib import Path
 from typing import List, Optional
-from .. import BaseParser
-from ...models import Function, Parameter, FunctionBody, ParsedFile, FunctionType
-from ...config import Config
+from . import BaseParser
+from ..models import Function, Parameter, FunctionBody, ParsedFile, FunctionType
+from ..config import Config
 
 class TypeScriptParser(BaseParser):
-    """Parser for TypeScript source files (.ts, .tsx)."""
+    """
+    Parser for TypeScript source files (.ts, .tsx).
+    
+    Note: Basic regex-based extraction is used. Complex patterns like
+    destructuring parameters or nested generics in types may not be 
+    fully supported.
+    """
 
     def __init__(self, config: Config):
         super().__init__(config)
 
     def can_parse(self, file_path: Path) -> bool:
         return file_path.suffix.lower() in {'.ts', '.tsx'}
+
+    def _extract_function_source(self, source: str, start_index: int) -> str:
+        """
+        Extract the full function source by matching braces.
+        
+        Args:
+            source: Full source code
+            start_index: Index where the function definition starts
+            
+        Returns:
+            Extracted function source code
+        """
+        brace_count = 0
+        in_brace = False
+        
+        # Find the opening brace first
+        current_idx = start_index
+        while current_idx < len(source):
+            if source[current_idx] == '{':
+                brace_count += 1
+                in_brace = True
+                current_idx += 1
+                break
+            current_idx += 1
+            
+        if not in_brace:
+            return "" # Could not find opening brace
+            
+        # Count braces until balanced
+        while current_idx < len(source):
+            char = source[current_idx]
+            if char == '{':
+                brace_count += 1
+            elif char == '}':
+                brace_count -= 1
+                
+            current_idx += 1
+            
+            if brace_count == 0:
+                break
+                
+        return source[start_index:current_idx]
 
     def parse_file(self, file_path: Path) -> ParsedFile:
         try:
@@ -48,13 +96,18 @@ class TypeScriptParser(BaseParser):
                 # Simple return type extraction could be improved, default to 'any' or parsed
                 return_type = 'any'
                 
+                # Extract actual source code
+                func_source = self._extract_function_source(source, match.start())
+                if not func_source:
+                    func_source = match.group(0) # Fallback to match only if extraction fails
+                
                 func = Function(
                     name=name,
                     parameters=params,
                     return_type=return_type,
                     function_type=FunctionType.FUNCTION,
                     body=FunctionBody(),
-                    source_code=source
+                    source_code=func_source
                 )
                 parsed_file.add_function(func)
 

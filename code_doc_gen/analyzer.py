@@ -47,13 +47,9 @@ class IntelligentAnalyzer:
                 self.nlp = spacy.load("en_core_web_sm")
                 self.logger.info("SpaCy initialized successfully")
             except OSError:
-                self.logger.warning("SpaCy model 'en_core_web_sm' not found. Downloading...")
-                try:
-                    from spacy.cli import download
-                    download("en_core_web_sm")
-                    self.nlp = spacy.load("en_core_web_sm")
-                except Exception as e:
-                    self.logger.warning(f"Failed to download/load SpaCy model: {e}")
+                self.logger.warning("SpaCy model 'en_core_web_sm' not found. Please run 'python -m spacy download en_core_web_sm' to enable enhanced analysis.")
+            except Exception:
+                self.logger.exception("Failed to load SpaCy model")
         
         # Patterns for function name analysis
         self.camel_case_pattern = re.compile(r'([A-Z][a-z0-9]+)')
@@ -263,10 +259,10 @@ class IntelligentAnalyzer:
                 
                 verb = verbs[0] if verbs else (words[0] if words else "processes")
                 obj = " ".join(nouns) if nouns else (" ".join(words[1:]) if len(words) > 1 else "data")
-                
+            except Exception:
+                self.logger.debug(f"SpaCy analysis failed for {name}")
+            else:
                 return verb, obj
-            except Exception as e:
-                self.logger.debug(f"SpaCy analysis failed for {name}: {e}")
         
         try:
             # Use NLTK for POS tagging
@@ -893,7 +889,7 @@ class IntelligentAnalyzer:
         
         return type_mapping.get(type_name.lower(), f"value of type {type_name}")
     
-    def analyze_exception(self, exception: Exception) -> None:
+    def analyze_exception(self, exception: FunctionException) -> None:
         """
         Analyze an exception and generate description.
         
@@ -903,7 +899,7 @@ class IntelligentAnalyzer:
         if not exception.description:
             exception.description = self._generate_exception_description(exception)
     
-    def _generate_exception_description(self, exception: Exception) -> str:
+    def _generate_exception_description(self, exception: FunctionException) -> str:
         """
         Generate a description for an exception.
         

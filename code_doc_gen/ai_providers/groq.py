@@ -8,7 +8,7 @@ except ImportError:
     GROQ_AVAILABLE = False
 
 class GroqProvider(AIProvider):
-    def __init__(self, api_key: str, model: Union[str, List[str]] = None):
+    def __init__(self, api_key: str, model: Optional[Union[str, List[str]]] = None):
         super().__init__(api_key, model)
         self.client = None
         if GROQ_AVAILABLE and self.api_key:
@@ -33,6 +33,9 @@ class GroqProvider(AIProvider):
         # Try each model in order
         for model in self.model:
             try:
+                # Ensure client is available (already checked by is_available but for typing)
+                assert self.client is not None
+                
                 self.logger.debug(f"Trying Groq model: {model}")
                 response = self.client.chat.completions.create(
                     model=model,

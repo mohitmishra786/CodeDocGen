@@ -6,24 +6,10 @@ Complex algorithms and data structures for AI documentation testing.
 import math
 import statistics
 from typing import List, Dict, Optional, Tuple
-from collections import defaultdict
+from collections import defaultdict, deque
 import heapq
 
 
-"""
-    Function dijkstra_shortest_path
-    :param graph: The graph of type dict[(int, list[tuple[(int, float)]])].
-    :param start: The start of type int.
-    :param end: The end of type int.
-    :return: Value of type Tuple[(List[int], float)]
-"""
-"""
-    Function dijkstra_shortest_path
-    :param graph: The graph of type dict[(int, list[tuple[(int, float)]])].
-    :param start: The start of type int.
-    :param end: The end of type int.
-    :return: Value of type Tuple[(List[int], float)]
-"""
 def dijkstra_shortest_path(graph: Dict[int, List[Tuple[int, float]]], 
                           start: int, 
                           end: int) -> Tuple[List[int], float]:
@@ -60,20 +46,6 @@ def dijkstra_shortest_path(graph: Dict[int, List[Tuple[int, float]]],
     return path, distances[end]
 
 
-"""
-    Function knapsack_dynamic_programming
-    :param weights: The weight of type list[int].
-    :param values: The values of type list[int].
-    :param capacity: The capacity of type int.
-    :return: Value of type Tuple[(int, List[int])]
-"""
-"""
-    Function knapsack_dynamic_programming
-    :param weights: The weight of type list[int].
-    :param values: The values of type list[int].
-    :param capacity: The capacity of type int.
-    :return: Value of type Tuple[(int, List[int])]
-"""
 def knapsack_dynamic_programming(weights: List[int], 
                                 values: List[int], 
                                 capacity: int) -> Tuple[int, List[int]]:
@@ -99,18 +71,6 @@ def knapsack_dynamic_programming(weights: List[int],
     return dp[n][capacity], selected_items[::-1]
 
 
-"""
-    Function binary_search_rotated_array
-    :param nums: The nums parameter.
-    :param target: The target of type int.
-    :return: Integer value
-"""
-"""
-    Function binary_search_rotated_array
-    :param nums: The nums parameter.
-    :param target: The target of type int.
-    :return: Integer value
-"""
 def binary_search_rotated_array(nums: List[int], target: int) -> int:
     """Search for target in rotated sorted array."""
     left, right = 0, len(nums) - 1
@@ -135,18 +95,6 @@ def binary_search_rotated_array(nums: List[int], target: int) -> int:
     return -1
 
 
-"""
-    Function longest_common_subsequence
-    :param text1: The text1 parameter.
-    :param text2: The text2 parameter.
-    :return: Integer value
-"""
-"""
-    Function longest_common_subsequence
-    :param text1: The text1 parameter.
-    :param text2: The text2 parameter.
-    :return: Integer value
-"""
 def longest_common_subsequence(text1: str, text2: str) -> int:
     """Find length of longest common subsequence."""
     m, n = len(text1), len(text2)
@@ -162,32 +110,8 @@ def longest_common_subsequence(text1: str, text2: str) -> int:
     return dp[m][n]
 
 
-"""
-    Function rabin_karp_string_matching
-    :param text: The text to process.
-    :param pattern: The form of type str.
-    :param prime: The prime of type int.
-    :return: Value of type List[int]
-"""
-"""
-    Function rabin_karp_string_matching
-    :param text: The text to process.
-    :param pattern: The form of type str.
-    :param prime: The prime of type int.
-    :return: Value of type List[int]
-"""
 def rabin_karp_string_matching(text: str, pattern: str, prime: int = 101) -> List[int]:
     """Find all occurrences of pattern in text using Rabin-Karp algorithm."""
-    """
-        Processes the hash string by iterating through collections, modifying state, returning computed result and performing mathematical operations
-        :param s: The s parameter.
-        :return: Integer value
-    """
-    """
-        Processes the hash string by iterating through collections, modifying state, returning computed result and performing mathematical operations
-        :param s: The s parameter.
-        :return: Integer value
-    """
     def hash_string(s: str) -> int:
         hash_val = 0
         for char in s:
@@ -214,16 +138,6 @@ def rabin_karp_string_matching(text: str, pattern: str, prime: int = 101) -> Lis
     return occurrences
 
 
-"""
-    Function merge_k_sorted_lists
-    :param lists: The list of type list[list[int]].
-    :return: Value of type List[int]
-"""
-"""
-    Function merge_k_sorted_lists
-    :param lists: The list of type list[list[int]].
-    :return: Value of type List[int]
-"""
 def merge_k_sorted_lists(lists: List[List[int]]) -> List[int]:
     """Merge k sorted lists efficiently."""
     if not lists:
@@ -247,22 +161,10 @@ def merge_k_sorted_lists(lists: List[List[int]]) -> List[int]:
     return result
 
 
-"""
-    Function find_median_of_two_sorted_arrays
-    :param nums1: The nums1 parameter.
-    :param nums2: The nums2 parameter.
-    :return: Floating-point value
-    :raises Call: Thrown when call occurs.
-"""
-"""
-    Function find_median_of_two_sorted_arrays
-    :param nums1: The nums1 parameter.
-    :param nums2: The nums2 parameter.
-    :return: Floating-point value
-    :raises Call: Thrown when call occurs.
-"""
 def find_median_of_two_sorted_arrays(nums1: List[int], nums2: List[int]) -> float:
     """Find median of two sorted arrays in O(log(min(m,n))) time."""
+    if not nums1 and not nums2:
+        raise ValueError("At least one input array must be non-empty")
     if len(nums1) > len(nums2):
         nums1, nums2 = nums2, nums1
     
@@ -292,31 +194,17 @@ def find_median_of_two_sorted_arrays(nums1: List[int], nums2: List[int]) -> floa
     raise ValueError("Input arrays are not sorted")
 
 
-"""
-    Function word_ladder_bfs
-    :param begin_word: The begin_word parameter.
-    :param end_word: The end_word parameter.
-    :param word_list: The word_list parameter.
-    :return: Integer value
-"""
-"""
-    Function word_ladder_bfs
-    :param begin_word: The begin_word parameter.
-    :param end_word: The end_word parameter.
-    :param word_list: The word_list parameter.
-    :return: Integer value
-"""
 def word_ladder_bfs(begin_word: str, end_word: str, word_list: List[str]) -> int:
     """Find shortest transformation sequence from begin to end word."""
     if end_word not in word_list:
         return 0
     
     word_set = set(word_list)
-    queue = [(begin_word, 1)]
+    queue = deque([(begin_word, 1)])
     visited = {begin_word}
     
     while queue:
-        current_word, level = queue.pop(0)
+        current_word, level = queue.popleft()
         
         if current_word == end_word:
             return level
@@ -332,34 +220,8 @@ def word_ladder_bfs(begin_word: str, end_word: str, word_list: List[str]) -> int
     return 0
 
 
-"""
-    Function sudoku_solver
-    :param board: The board of type list[list[str]].
-    :return: True or false
-"""
-"""
-    Function sudoku_solver
-    :param board: The board of type list[list[str]].
-    :return: True or false
-"""
 def sudoku_solver(board: List[List[str]]) -> bool:
     """Solve Sudoku puzzle using backtracking."""
-    """
-        Is the valid by returning computed result, making conditional decisions, performing mathematical operations, modifying state and iterating through collections
-        :param board: The board of type list[list[str]].
-        :param row: The row of type int.
-        :param col: The col of type int.
-        :param num: The number to calculate for.
-        :return: True or false
-    """
-    """
-        Function is_valid
-        :param board: The board of type list[list[str]].
-        :param row: The row of type int.
-        :param col: The col of type int.
-        :param num: The number to calculate for.
-        :return: True or false
-    """
     def is_valid(board: List[List[str]], row: int, col: int, num: str) -> bool:
         for x in range(9):
             if board[row][x] == num:
@@ -377,16 +239,6 @@ def sudoku_solver(board: List[List[str]]) -> bool:
         
         return True
     
-    """
-        Processes the solve by returning computed result, making conditional decisions, modifying state, using recursion and iterating through collections
-        :param board: The board of type list[list[str]].
-        :return: True or false
-    """
-    """
-        Processes the solve by returning computed result, making conditional decisions, modifying state, using recursion and iterating through collections
-        :param board: The board of type list[list[str]].
-        :return: True or false
-    """
     def solve(board: List[List[str]]) -> bool:
         for i in range(9):
             for j in range(9):

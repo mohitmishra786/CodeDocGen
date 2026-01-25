@@ -63,7 +63,7 @@ class ParserFactory:
             config: Configuration object
         """
         self.config = config
-        self._parsers = {}
+        self._parsers: Dict[str, BaseParser] = {}
         self._load_parsers()
     
     def _load_parsers(self) -> None:

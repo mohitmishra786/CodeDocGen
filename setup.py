@@ -51,7 +51,6 @@ setup(
     install_requires=[
         "nltk>=3.8",
         "pyyaml>=6.0",
-        "pytest>=7.0.0",
         "typing-extensions>=4.0.0",
         "python-dotenv>=1.0.0",
         "tqdm>=4.65.0",

@@ -3,7 +3,7 @@
 Welcome! This document provides essential information for agentic coding agents working on the CodeDocGen repository.
 
 ## Project Overview
-CodeDocGen is an AI-powered documentation generator for Python, C++, Java, and JavaScript. It uses AST analysis (libclang for C++, `ast` for Python) and NLTK for intelligent fallback analysis.
+CodeDocGen is an AI-powered documentation generator for Python, C++, Java, JavaScript, TypeScript, Go, and Rust. It uses AST analysis (libclang for C++, `ast` for Python) and NLTK for intelligent fallback analysis.
 
 ## Development Environment
 - **Language**: Python 3.8+ (Primary), C++17 (Secondary)
@@ -25,13 +25,13 @@ CodeDocGen is an AI-powered documentation generator for Python, C++, Java, and J
 ### Python Style
 - **Formatting**: Strictly follow `black` (88 characters, double quotes).
 - **Imports**: Group in the following order:
-    1. Standard library imports
-    2. Third-party library imports (e.g., `nltk`, `yaml`, `clang`)
-    3. Local module imports (relative or absolute)
+  1. Standard library imports
+  2. Third-party library imports (e.g., `nltk`, `yaml`, `clang`)
+  3. Local module imports (relative or absolute)
 - **Naming**:
-    - Classes: `PascalCase`
-    - Functions/Variables: `snake_case`
-    - Constants: `UPPER_CASE`
+  - Classes: `PascalCase`
+  - Functions/Variables: `snake_case`
+  - Constants: `UPPER_CASE`
 - **Typing**: Use type hints for all public functions and methods. Import complex types from `typing`.
 - **Docstrings**: Use PEP 257 compliant triple-double quotes. Include `Args:`, `Returns:`, and `Raises:` sections.
 - **Path Handling**: Always use `pathlib.Path` instead of `os.path`.
@@ -44,13 +44,13 @@ CodeDocGen is an AI-powered documentation generator for Python, C++, Java, and J
 
 ### Repository Structure
 - `code_doc_gen/`: Main package.
-    - `parsers/`: Language-specific parsers.
-    - `main.py`: CLI entry point.
-    - `models.py`: Data models (Function, Parameter, etc.).
-    - `scanner.py`: Repository and file scanning logic.
-    - `generator.py`: Documentation generation and file modification.
-    - `ai_analyzer.py`: Integration with AI providers (Groq, OpenAI).
-    - `analyzer.py`: NLTK-based intelligent analysis.
+  - `parsers/`: Language-specific parsers.
+  - `main.py`: CLI entry point.
+  - `models.py`: Data models (Function, Parameter, etc.).
+  - `scanner.py`: Repository and file scanning logic.
+  - `generator.py`: Documentation generation and file modification.
+  - `ai_analyzer.py`: Integration with AI providers (Groq, OpenAI, Anthropic, Mistral, Azure OpenAI).
+  - `analyzer.py`: NLTK-based intelligent analysis.
 - `tests/`: Extensive test suite.
 - `usage/`: OS-specific setup guides.
 

@@ -92,7 +92,7 @@ def validate_args(args: argparse.Namespace) -> None:
     if not repo_path.is_dir():
         raise ValueError(f"Repository path must be a directory: {repo_path}")
     
-    if args.lang and args.lang not in ['c++', 'python', 'java', 'javascript']:
+    if args.lang and args.lang not in ['c++', 'python', 'java', 'javascript', 'typescript', 'go', 'rust']:
         raise ValueError(f"Unsupported language: {args.lang}")
     
     if args.config and not Path(args.config).exists():
@@ -138,7 +138,7 @@ Examples:
     # Optional arguments
     parser.add_argument(
         '--lang',
-        choices=['c++', 'python', 'java', 'javascript'],
+        choices=['c++', 'python', 'java', 'javascript', 'typescript', 'go', 'rust'],
         help='Programming language (auto-detect if not specified)'
     )
     
@@ -250,7 +250,7 @@ Examples:
     # Credential Management
     parser.add_argument(
         '--set-key',
-        help='Securely store an API key for a provider (interactive prompt). Usage: --set-key [groq|openai|anthropic|mistral]'
+        help='Securely store an API key for a provider (interactive prompt). Usage: --set-key [groq|openai|azure_openai|anthropic|mistral]'
     )
     
     # Wizard
@@ -345,6 +345,8 @@ Examples:
             
         # Configure SpaCy
         if args.enable_spacy:
+            if 'nltk' not in config.config:
+                config.config['nltk'] = {}
             config.config['nltk']['enable_spacy'] = True
         
         # Initialize scanner AFTER AI configuration is updated
