@@ -319,16 +319,18 @@ class RepositoryScanner:
         # Parse files
         if parallel and len(file_paths) > 1:
             return self.parse_files_parallel(file_paths, lang)
-        else:
-            file_functions = {}
-            iterator = file_paths
-            if TQDM_AVAILABLE:
-                iterator = tqdm(file_paths, desc="Parsing files", unit="file")
-                
-            for file_path in iterator:
+        file_functions: Dict[Path, List[Function]] = {}
+        if TQDM_AVAILABLE:
+            iterator = tqdm(file_paths, desc="Parsing files", unit="file")
+            for file_path in iterator: # type: ignore
                 functions = self.parse_file(file_path, lang)
                 file_functions[file_path] = functions
             return file_functions
+                
+        for file_path in file_paths:
+            functions = self.parse_file(file_path, lang)
+            file_functions[file_path] = functions
+        return file_functions
     
     def get_supported_languages(self) -> List[str]:
         """

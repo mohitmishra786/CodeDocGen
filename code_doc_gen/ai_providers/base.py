@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, List, Union
+import logging
 
 class AIProvider(ABC):
     """Abstract base class for AI providers."""

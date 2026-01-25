@@ -54,7 +54,8 @@ class GroqProvider(AIProvider):
                 
                 if response.choices and len(response.choices) > 0:
                     self.logger.debug(f"Groq model {model} succeeded")
-                    return response.choices[0].message.content.strip()
+                    res_content = response.choices[0].message.content
+                    return res_content.strip() if res_content else None
                 
             except Exception as e:
                 self.logger.warning(f"Groq model {model} failed: {e}")

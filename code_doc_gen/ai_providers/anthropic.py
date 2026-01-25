@@ -2,7 +2,7 @@ from typing import Optional, Union, List
 from .base import AIProvider
 
 try:
-    import anthropic
+    import anthropic  # type: ignore
     ANTHROPIC_AVAILABLE = True
 except ImportError:
     ANTHROPIC_AVAILABLE = False

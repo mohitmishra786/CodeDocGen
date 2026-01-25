@@ -89,7 +89,8 @@ class JavaParser(BaseParser):
         """
         try:
             # Parse the source code
-            compilation_unit = self.javaparser.parse(source_code)
+            # Type ignore because javaparser is not installed in this env
+            compilation_unit = self.javaparser.parse(source_code)  # type: ignore
             
             # Extract imports
             parsed_file.imports = self._extract_imports_javaparser(compilation_unit)

@@ -37,7 +37,7 @@ def generate_docs(
     inplace: bool = False,
     output_dir: Optional[Union[str, Path]] = None,
     **kwargs
-) -> Dict[str, Dict[str, str]]:
+) -> Dict[str, str]:
     """
     Generate documentation for functions and methods in a repository.
     
@@ -51,7 +51,7 @@ def generate_docs(
         **kwargs: Additional configuration options (ai_enabled, ai_provider, api_keys, etc.)
         
     Returns:
-        Dictionary mapping file paths to a dictionary of generated documentation strings (func_name -> doc)
+        Dictionary mapping file paths to generated documentation strings
     """
     config = Config(Path(config_path) if config_path else None)
     
@@ -82,7 +82,7 @@ def generate_docs(
     # Scan repository for files
     file_paths = scanner.scan_repository(Path(repo_path), lang, files)
     
-    results: Dict[str, Dict[str, str]] = {}
+    results: Dict[str, str] = {}
     for file_path in file_paths:
         try:
             # Parse and analyze the file
@@ -105,7 +105,6 @@ def generate_docs(
                     file_lang = 'rust'
 
             # If still no language determined (e.g. unknown extension), skip or default?
-            # Original code had no fallback else block in the snippet I read, but let's assume if it fails it might error or return empty.
             if not file_lang:
                  continue
 
@@ -113,6 +112,9 @@ def generate_docs(
             
             # Generate documentation
             doc_strings = generator.generate_documentation(functions, file_lang)
+            
+            # Combine into a single string for this file if results are expected as Dict[str, str]
+            file_doc_combined = "\n\n".join(doc_strings.values())
             
             if inplace:
                 # Modify file in place
@@ -122,7 +124,7 @@ def generate_docs(
                 output_path = Path(output_dir) / Path(file_path).name
                 generator.write_documentation_to_file(output_path, doc_strings)
             
-            results[str(file_path)] = doc_strings
+            results[str(file_path)] = file_doc_combined
             
         except Exception as e:
             print(f"Error processing {file_path}: {e}")

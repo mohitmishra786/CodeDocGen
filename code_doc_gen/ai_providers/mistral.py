@@ -2,7 +2,7 @@ from typing import Optional, Union, List
 from .base import AIProvider
 
 try:
-    from mistralai import Mistral
+    from mistralai import Mistral  # type: ignore
     MISTRAL_AVAILABLE = True
 except ImportError:
     MISTRAL_AVAILABLE = False

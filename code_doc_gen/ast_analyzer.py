@@ -3,7 +3,7 @@ AST Analyzer for intelligent function analysis.
 """
 
 import ast
-from typing import List, Set, Optional
+from typing import List, Set, Optional, Dict, Any
 
 
 class ASTAnalyzer(ast.NodeVisitor):
