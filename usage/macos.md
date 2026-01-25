@@ -1,4 +1,4 @@
-## CodeDocGen on macOS — Step-by-step Guide
+## CodeDocGen on macOS -- Step-by-step Guide
 
 This guide makes it easy to install and use CodeDocGen on macOS (Intel or Apple Silicon).
 
@@ -127,5 +127,5 @@ pip install -U -i https://test.pypi.org/simple/ code_doc_gen==1.1.7
 pip uninstall code_doc_gen
 ```
 
-You’re all set to generate documentation on macOS!
+You're all set to generate documentation on macOS!
 
