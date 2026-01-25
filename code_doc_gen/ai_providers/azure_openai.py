@@ -26,18 +26,22 @@ class AzureOpenAIProvider(AIProvider):
             except Exception as e:
                 self.logger.warning(f"Failed to initialize Azure OpenAI client: {e}")
         
-        # Ensure model is a list
-        if isinstance(self.model, str):
-            self.model = [self.model]
+        # Ensure models is a list
+        if not self.model:
+            self.models = ['gpt-4']
+        elif isinstance(self.model, str):
+            self.models = [self.model]
+        else:
+            self.models = self.model
 
     def is_available(self) -> bool:
         return AZURE_AVAILABLE and bool(self.api_key) and bool(self.endpoint) and self.client is not None
 
     def generate_documentation(self, prompt: str, max_tokens: int = 500, temperature: float = 0.3) -> Optional[str]:
-        if not self.is_available() or self.client is None:
+        if not self.is_available() or self.client is None or not self.models:
             return None
 
-        for deployment in self.model:
+        for deployment in self.models:
             try:
                 # For Azure, 'model' parameter in client.chat.completions.create usually refers to the deployment name
                 response = self.client.chat.completions.create(

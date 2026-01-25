@@ -12,7 +12,7 @@ from typing import List, Dict, Any, Optional
 from multiprocessing import Pool, cpu_count
 
 try:
-    from tqdm import tqdm
+    from tqdm import tqdm  # type: ignore
     TQDM_AVAILABLE = True
 except ImportError:
     TQDM_AVAILABLE = False

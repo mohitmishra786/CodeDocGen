@@ -37,7 +37,7 @@ def generate_docs(
     inplace: bool = False,
     output_dir: Optional[Union[str, Path]] = None,
     **kwargs
-) -> Dict[str, str]:
+) -> Dict[str, Dict[str, str]]:
     """
     Generate documentation for functions and methods in a repository.
     
@@ -51,7 +51,7 @@ def generate_docs(
         **kwargs: Additional configuration options (ai_enabled, ai_provider, api_keys, etc.)
         
     Returns:
-        Dictionary mapping file paths to generated documentation strings
+        Dictionary mapping file paths to a dictionary of generated documentation strings (func_name -> doc)
     """
     config = Config(Path(config_path) if config_path else None)
     
@@ -80,14 +80,9 @@ def generate_docs(
     generator = DocumentationGenerator(config)
     
     # Scan repository for files
-    # If lang is None, scan_repository usually expects a list or handles "all". 
-    # Let's check scanner.scan_repository signature.
-    # Assuming it handles None or we pass "c++" as default only if strictly needed by scanner?
-    # Actually, if lang is None, we likely want to scan ALL supported files.
-    # Looking at original code, it passed `lang`. If I change default to None, I should pass None.
-    file_paths = scanner.scan_repository(repo_path, lang, files)
+    file_paths = scanner.scan_repository(Path(repo_path), lang, files)
     
-    results = {}
+    results: Dict[str, Dict[str, str]] = {}
     for file_path in file_paths:
         try:
             # Parse and analyze the file

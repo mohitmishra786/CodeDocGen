@@ -413,9 +413,9 @@ class PythonParser(BaseParser):
         
         return len(lines)
     
-    def _ast_to_string(self, node: ast.AST) -> str:
+    def _ast_to_string(self, node: Optional[ast.AST]) -> str:
         """
-        Convert an AST node to a string representation.
+        Convert an AST node to its string representation.
         
         Args:
             node: AST node
@@ -425,7 +425,7 @@ class PythonParser(BaseParser):
         """
         if node is None:
             return ""
-        
+            
         if isinstance(node, ast.Name):
             return node.id
         elif isinstance(node, ast.Constant):
@@ -443,9 +443,14 @@ class PythonParser(BaseParser):
         elif isinstance(node, ast.Dict):
             items = []
             for key, value in zip(node.keys, node.values):
-                key_str = self._ast_to_string(key)
-                value_str = self._ast_to_string(value)
-                items.append(f"{key_str}: {value_str}")
+                if key is None:
+                    # Handle dictionary unpacking {**d}
+                    value_str = self._ast_to_string(value)
+                    items.append(f"**{value_str}")
+                else:
+                    key_str = self._ast_to_string(key)
+                    value_str = self._ast_to_string(value)
+                    items.append(f"{key_str}: {value_str}")
             return f"{{{', '.join(items)}}}"
         else:
             return str(type(node).__name__)

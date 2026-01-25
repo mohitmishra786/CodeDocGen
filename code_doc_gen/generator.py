@@ -491,7 +491,7 @@ class DocumentationGenerator:
         """
         Insert documentation into file lines.
         """
-        modified_lines = []
+        modified_lines: List[str] = []
         processed_functions = set()
         i = 0
         

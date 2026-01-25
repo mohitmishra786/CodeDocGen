@@ -191,7 +191,7 @@ class ASTAnalyzer(ast.NodeVisitor):
             return node.attr == 'requests'
         return False
     
-    def get_detailed_characteristics(self) -> dict:
+    def get_detailed_characteristics(self) -> Dict[str, Any]:
         """Get detailed analysis results."""
         return {
             'characteristics': list(self.characteristics),

@@ -20,10 +20,10 @@ from ..config import Config
 
 # Try to import clang, but don't fail if it's not available
 try:
-    import clang.cindex
+    import clang.cindex  # type: ignore
     CLANG_AVAILABLE = True
     if TYPE_CHECKING:
-        from clang.cindex import Cursor, Type
+        from clang.cindex import Cursor, Type  # type: ignore
 except ImportError:
     CLANG_AVAILABLE = False
     # Create dummy types for type hints when clang is not available
@@ -166,11 +166,11 @@ class CppParser(BaseParser):
                             return
             # Some wheels ship the library directly under site-packages without 'native'
             import site
-            for p in site.getsitepackages() + [site.getusersitepackages()]:
+            for site_pkg_path in site.getsitepackages() + [site.getusersitepackages()]:
                 for candidate in (
-                    os.path.join(p, 'libclang.dylib'),
-                    os.path.join(p, 'libclang.so'),
-                    os.path.join(p, 'libclang.dll'),
+                    os.path.join(site_pkg_path, 'libclang.dylib'),
+                    os.path.join(site_pkg_path, 'libclang.so'),
+                    os.path.join(site_pkg_path, 'libclang.dll'),
                 ):
                     if os.path.exists(candidate):
                         if _try_set_and_probe("file", candidate):
@@ -446,13 +446,15 @@ class CppParser(BaseParser):
             
             function = Function(
                 name=name,
-                return_type=return_type,
+                return_type="void",  # Constructors don't return anything
                 parameters=parameters,
                 exceptions=exceptions,
                 body=body,
-                function_type=FunctionType.METHOD,
-                class_name=class_name,
-                source_code=source_code
+                function_type=FunctionType.CONSTRUCTOR,
+                class_name=class_name or "",
+                source_code=source_code,
+                line_number=line_number,
+                end_line=end_line
             )
             
             return function
@@ -902,13 +904,17 @@ class CppParser(BaseParser):
                     parameters = self._parse_parameters_regex(params_str)
                 # Extract function body for analysis
                 body = self._analyze_function_body_regex(source_code, match.start(), function_name)
-                function = Function(
-                    name=function_name,
-                    return_type=return_type,
-                    parameters=parameters,
-                    body=body,
-                    function_type=FunctionType.FUNCTION
-                )
+            function = Function(
+                name=name,
+                return_type="void",  # Destructors don't return anything
+                parameters=parameters,
+                body=body,
+                function_type=FunctionType.DESTRUCTOR,
+                class_name=class_name or "",
+                source_code=source_code,
+                line_number=line_number,
+                end_line=end_line
+            )
                 functions.append(function)
             return functions
             

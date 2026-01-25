@@ -6,7 +6,7 @@ import logging
 import getpass
 from pathlib import Path
 from typing import Dict, Any
-import yaml
+import yaml  # type: ignore
 
 from .config import Config
 from .credential_manager import CredentialManager

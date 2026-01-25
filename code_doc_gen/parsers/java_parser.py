@@ -28,7 +28,7 @@ class JavaParser(BaseParser):
         super().__init__(config)
         # Try to import javaparser
         try:
-            import javaparser
+            import javaparser  # type: ignore
             self.javaparser = javaparser
         except ImportError:
             self.javaparser = None
