@@ -316,12 +316,11 @@ Do NOT include introductory text like "Here is the comment:" or similar."""
             # Handle code-fenced docstring
             fenced = re.search(r'^```(?:\w+\n)?(.*?)```$', raw, flags=re.DOTALL)
             if fenced:
-                inner = fenced.group(1).strip()
-                if inner.startswith('"""') and inner.endswith('"""'):
-                    return inner
-                raw = inner
-            if raw.startswith('"""') and raw.endswith('"""'):
-                return raw
+                raw = fenced.group(1).strip()
+            
+            # Remove any existing triple quotes to reformat consistently
+            raw = re.sub(r'^"""\s*(.*?)\s*"""$', r'\1', raw, flags=re.DOTALL)
+            raw = re.sub(r"^'''\s*(.*?)\s*'''$", r'\1', raw, flags=re.DOTALL)
 
         cleaned = self._remove_boundary_markers(raw, language)
         cleaned = re.sub(r'^```.*?```$', '', cleaned, flags=re.DOTALL)
