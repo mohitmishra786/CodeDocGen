@@ -45,12 +45,20 @@ class FunctionBody:
         self.has_side_effects = False
         self.has_arithmetic = False
         self.has_early_returns = False
+        self.has_returns = False
         self.has_recursion = False
         self.has_regex = False
         self.has_api_calls = False
         self.has_file_operations = False
         self.has_collections = False
         self.has_string_operations = False
+        self.has_comparisons = False
+        self.has_function_calls = False
+        self.complexity_score = 0
+        self.loop_count = 0
+        self.conditional_count = 0
+        self.function_call_count = 0
+        self.return_count = 0
     
     def get_behavior_description(self) -> str:
         """Get a description of the function's behavior."""
@@ -95,23 +103,29 @@ class Function:
                  return_type: str,
                  function_type: FunctionType = FunctionType.FUNCTION,
                  class_name: str = "",
+                 namespace: str = "",
                  brief_description: str = "",
                  detailed_description: str = "",
-                 exceptions: List[FunctionException] = None,
+                 exceptions: Optional[List[FunctionException]] = None,
                  body: Optional[FunctionBody] = None,
                  ast_node: Optional[ast.AST] = None,
-                 source_code: str = ""):
+                 source_code: str = "",
+                 line_number: int = 0,
+                 end_line: int = 0):
         self.name = name
         self.parameters = parameters
         self.return_type = return_type
         self.function_type = function_type
         self.class_name = class_name
+        self.namespace = namespace
         self.brief_description = brief_description
         self.detailed_description = detailed_description
         self.exceptions = exceptions or []
         self.body = body or FunctionBody()
         self.ast_node = ast_node
         self.source_code = source_code
+        self.line_number = line_number
+        self.end_line = end_line
     
     def has_parameters(self) -> bool:
         """Check if the function has parameters."""
@@ -161,13 +175,13 @@ class DocumentationResult:
     """Represents the result of documentation generation."""
     
     def __init__(self, function: Function, brief_doc: str, detailed_doc: str, 
-                 param_docs: Dict[str, str] = None, return_doc: str = None, 
-                 exception_docs: Dict[str, str] = None):
+                 param_docs: Optional[Dict[str, str]] = None, return_doc: Optional[str] = None, 
+                 exception_docs: Optional[Dict[str, str]] = None):
         self.function = function
         self.brief_doc = brief_doc
         self.detailed_doc = detailed_doc
         self.param_docs = param_docs or {}
-        self.return_doc = return_doc
+        self.return_doc = return_doc or ""
         self.exception_docs = exception_docs or {}
     
     def get_full_documentation(self) -> str:

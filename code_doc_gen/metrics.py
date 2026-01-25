@@ -17,7 +17,7 @@ class MetricsCalculator:
         self.files_processed = 0
         self.by_language: Dict[str, LanguageStats] = {}
 
-    def update(self, functions: List[Function], language: str):
+    def update(self, functions: List[Function], language: str) -> None:
         """Update metrics with functions from a file."""
         self.files_processed += 1
         count = len(functions)

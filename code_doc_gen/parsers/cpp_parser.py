@@ -20,10 +20,10 @@ from ..config import Config
 
 # Try to import clang, but don't fail if it's not available
 try:
-    import clang.cindex
+    import clang.cindex  # type: ignore
     CLANG_AVAILABLE = True
     if TYPE_CHECKING:
-        from clang.cindex import Cursor, Type
+        from clang.cindex import Cursor, Type  # type: ignore
 except ImportError:
     CLANG_AVAILABLE = False
     # Create dummy types for type hints when clang is not available
@@ -166,11 +166,11 @@ class CppParser(BaseParser):
                             return
             # Some wheels ship the library directly under site-packages without 'native'
             import site
-            for p in site.getsitepackages() + [site.getusersitepackages()]:
+            for site_pkg_path in site.getsitepackages() + [site.getusersitepackages()]:
                 for candidate in (
-                    os.path.join(p, 'libclang.dylib'),
-                    os.path.join(p, 'libclang.so'),
-                    os.path.join(p, 'libclang.dll'),
+                    os.path.join(site_pkg_path, 'libclang.dylib'),
+                    os.path.join(site_pkg_path, 'libclang.so'),
+                    os.path.join(site_pkg_path, 'libclang.dll'),
                 ):
                     if os.path.exists(candidate):
                         if _try_set_and_probe("file", candidate):
@@ -254,8 +254,8 @@ class CppParser(BaseParser):
                 os.path.join(program_files, "LLVM", "lib", "libclang.dll"),
             ]
             # Also try from PATH entries
-            for p in os.environ.get("PATH", "").split(os.pathsep):
-                candidate_files.append(os.path.join(p, "libclang.dll"))
+            for path_entry in os.environ.get("PATH", "").split(os.pathsep):
+                candidate_files.append(os.path.join(path_entry, "libclang.dll"))
 
         # Try files first
         for f in candidate_files:
@@ -381,11 +381,14 @@ class CppParser(BaseParser):
             # Get return type
             return_type = self._get_type_string(cursor.result_type)
             
-            # Get parameters
-            parameters = self._parse_parameters(cursor)
+            # Parse parameters
+            parameters: List[Parameter] = self._parse_parameters(cursor)
             
-            # Get exceptions
-            exceptions = self._parse_exceptions(cursor)
+            # Parse exceptions
+            exceptions: List[FunctionException] = self._parse_exceptions(cursor)
+            
+            # Get class name
+            class_name = self._get_class_name(cursor)
             
             # Analyze function body
             body = self._analyze_function_body(cursor)
@@ -429,17 +432,21 @@ class CppParser(BaseParser):
             # Get return type
             return_type = self._get_type_string(cursor.result_type)
             
-            # Get parameters
-            parameters = self._parse_parameters(cursor)
+            # Parse parameters
+            parameters: List[Parameter] = self._parse_parameters(cursor)
             
-            # Get exceptions
-            exceptions = self._parse_exceptions(cursor)
+            # Parse exceptions
+            exceptions: List[FunctionException] = self._parse_exceptions(cursor)
             
             # Get class name
             class_name = self._get_class_name(cursor)
             
             # Analyze function body
             body = self._analyze_function_body(cursor)
+            
+            # Get line numbers
+            line_number = cursor.location.line
+            end_line = self._get_end_line(cursor)
             
             # Get source code for AST analysis
             source_code = self._extract_function_source(cursor)
@@ -451,8 +458,10 @@ class CppParser(BaseParser):
                 exceptions=exceptions,
                 body=body,
                 function_type=FunctionType.METHOD,
-                class_name=class_name,
-                source_code=source_code
+                class_name=class_name or "",
+                source_code=source_code,
+                line_number=line_number,
+                end_line=end_line
             )
             
             return function
@@ -478,11 +487,11 @@ class CppParser(BaseParser):
             # Get constructor name (same as class name)
             name = cursor.spelling
             
-            # Get parameters
-            parameters = self._parse_parameters(cursor)
+            # Parse parameters
+            parameters: List[Parameter] = self._parse_parameters(cursor)
             
-            # Get exceptions
-            exceptions = self._parse_exceptions(cursor)
+            # Parse exceptions
+            exceptions: List[FunctionException] = self._parse_exceptions(cursor)
             
             # Get class name
             class_name = self._get_class_name(cursor)
@@ -494,6 +503,9 @@ class CppParser(BaseParser):
             line_number = cursor.location.line
             end_line = self._get_end_line(cursor)
             
+            # Get source code
+            source_code = self._extract_function_source(cursor)
+            
             function = Function(
                 name=name,
                 return_type="void",  # Constructors don't return anything
@@ -501,7 +513,8 @@ class CppParser(BaseParser):
                 exceptions=exceptions,
                 body=body,
                 function_type=FunctionType.CONSTRUCTOR,
-                class_name=class_name,
+                class_name=class_name or "",
+                source_code=source_code,
                 line_number=line_number,
                 end_line=end_line
             )
@@ -526,6 +539,42 @@ class CppParser(BaseParser):
             return None
             
         try:
+            # Get destructor name
+            name = cursor.spelling
+            
+            # Get parameters
+            parameters = self._parse_parameters(cursor)
+            
+            # Get class name
+            class_name = self._get_class_name(cursor)
+            
+            # Analyze function body
+            body = self._analyze_function_body(cursor)
+            
+            # Get line numbers
+            line_number = cursor.location.line
+            end_line = self._get_end_line(cursor)
+            
+            # Get source code
+            source_code = self._extract_function_source(cursor)
+            
+            function = Function(
+                name=name,
+                return_type="void",  # Destructors don't return anything
+                parameters=parameters,
+                body=body,
+                function_type=FunctionType.DESTRUCTOR,
+                class_name=class_name or "",
+                source_code=source_code,
+                line_number=line_number,
+                end_line=end_line
+            )
+            
+            return function
+            
+        except Exception as e:
+            print(f"Error parsing destructor {cursor.spelling}: {e}")
+            return None
             # Get destructor name
             name = cursor.spelling
             
@@ -604,7 +653,7 @@ class CppParser(BaseParser):
         if not CLANG_AVAILABLE:
             return []
             
-        exceptions = []
+        exceptions: List[FunctionException] = []
         
         # This is a simplified implementation
         # In a real implementation, you would need to analyze the function body
@@ -789,10 +838,10 @@ class CppParser(BaseParser):
     
     def _extract_function_source(self, cursor: Cursor) -> str:
         """
-        Extract the source code for a function from the cursor.
+        Extract function source code from the file.
         
         Args:
-            cursor: Function cursor
+            cursor: AST cursor
             
         Returns:
             Function source code as string
@@ -801,12 +850,40 @@ class CppParser(BaseParser):
             return ""
             
         try:
-            # Get the file content
-            file_path = cursor.location.file
+            # Try to get the file path
+            file_ptr = cursor.location.file
+            if not file_ptr:
+                return ""
+            
+            file_path = str(file_ptr)
             if not file_path:
                 return ""
                 
-            with open(str(file_path), 'r', encoding='utf-8') as f:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                source_lines = f.readlines()
+            
+            # Get start and end lines
+            start_line = cursor.location.line - 1  # 0-indexed
+            end_line = self._get_end_line(cursor) - 1  # 0-indexed
+            
+            # Extract the function source
+            function_lines = source_lines[start_line:end_line + 1]
+            return ''.join(function_lines)
+            
+        except Exception as e:
+            print(f"Error extracting function source: {e}")
+            return ""
+            
+            # Try to get the file path
+            file_ptr = cursor.location.file
+            if not file_ptr:
+                return ""
+            
+            file_path = str(file_ptr)
+            if not file_path:
+                return ""
+                
+            with open(file_path, 'r', encoding='utf-8') as f:
                 source_lines = f.readlines()
             
             # Get start and end lines
@@ -876,32 +953,73 @@ class CppParser(BaseParser):
     
     def _extract_functions_regex(self, source_code: str) -> List[Function]:
         """
-        Extract functions using regex patterns with basic body analysis.
+        Extract functions from source code using regex.
         
         Args:
-            source_code: C++ source code
+            source_code: Source code string
             
         Returns:
             List of Function objects
         """
         import re
         
-        if not CLANG_AVAILABLE:
-            functions = []
-            # Updated pattern for function definitions to match complex return types
-            # Matches: return_type function_name(parameters) { body }
-            function_pattern = r'([a-zA-Z_][\w:\s<>,&*]*)\s+(\w+)\s*\(([^)]*)\)\s*\{'
-            matches = re.finditer(function_pattern, source_code)
-            for match in matches:
-                return_type = match.group(1).strip()
-                function_name = match.group(2).strip()
-                params_str = match.group(3).strip()
+        # Pattern for class destructors
+        # Matches: ~ClassName() { body }
+        destructor_pattern = r'~(\w+)\s*\(([^)]*)\)\s*\{'
+        
+        functions = []
+        matches = re.finditer(destructor_pattern, source_code)
+        for match in matches:
+            try:
+                name = "~" + match.group(1)
+                class_name = match.group(1)
+                params_str = match.group(2).strip()
+                
+                # Default values for regex extraction
+                line_number = source_code.count('\n', 0, match.start()) + 1
+                end_line = line_number # Simple approximation
+                
                 # Parse parameters
                 parameters = []
                 if params_str:
                     parameters = self._parse_parameters_regex(params_str)
                 # Extract function body for analysis
+                body = self._analyze_function_body_regex(source_code, match.start(), name)
+                
+                function = Function(
+                    name=name,
+                    return_type="void",  # Destructors don't return anything
+                    parameters=parameters,
+                    body=body,
+                    function_type=FunctionType.DESTRUCTOR,
+                    class_name=class_name or "",
+                    source_code=source_code,
+                    line_number=line_number,
+                    end_line=end_line
+                )
+                functions.append(function)
+            except Exception:
+                continue
+                
+        # Pattern for function definitions to match complex return types
+        # Matches: return_type function_name(parameters) { body }
+        function_pattern = r'([a-zA-Z_][\w:\s<>,&*]*)\s+(\w+)\s*\(([^)]*)\)\s*\{'
+        
+        matches = re.finditer(function_pattern, source_code)
+        for match in matches:
+            try:
+                return_type = match.group(1).strip()
+                function_name = match.group(2).strip()
+                params_str = match.group(3).strip()
+                
+                # Parse parameters
+                parameters = []
+                if params_str:
+                    parameters = self._parse_parameters_regex(params_str)
+                
+                # Extract function body for analysis
                 body = self._analyze_function_body_regex(source_code, match.start(), function_name)
+                
                 function = Function(
                     name=function_name,
                     return_type=return_type,
@@ -909,8 +1027,12 @@ class CppParser(BaseParser):
                     body=body,
                     function_type=FunctionType.FUNCTION
                 )
+                
                 functions.append(function)
-            return functions
+            except Exception:
+                continue
+                
+        return functions
             
         functions = []
         
@@ -1023,7 +1145,7 @@ class CppParser(BaseParser):
         import re
         
         if not CLANG_AVAILABLE:
-            parameters = []
+            parameters: List[Parameter] = []
             
             if not params_str.strip():
                 return parameters

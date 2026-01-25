@@ -6,7 +6,8 @@ Handles loading and validation of YAML configuration files with default settings
 
 import os
 import copy
-import yaml
+import yaml  # type: ignore
+import logging
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 

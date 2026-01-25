@@ -217,7 +217,7 @@ class GitIntegration:
         Returns:
             Dictionary with repository status
         """
-        status = {
+        status: Dict[str, Any] = {
             'is_git_repo': self.is_git_repo,
             'repo_path': str(self.repo_path),
             'branch': None,

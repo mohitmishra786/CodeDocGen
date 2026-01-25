@@ -80,14 +80,9 @@ def generate_docs(
     generator = DocumentationGenerator(config)
     
     # Scan repository for files
-    # If lang is None, scan_repository usually expects a list or handles "all". 
-    # Let's check scanner.scan_repository signature.
-    # Assuming it handles None or we pass "c++" as default only if strictly needed by scanner?
-    # Actually, if lang is None, we likely want to scan ALL supported files.
-    # Looking at original code, it passed `lang`. If I change default to None, I should pass None.
-    file_paths = scanner.scan_repository(repo_path, lang, files)
+    file_paths = scanner.scan_repository(Path(repo_path), lang, files)
     
-    results = {}
+    results: Dict[str, str] = {}
     for file_path in file_paths:
         try:
             # Parse and analyze the file
@@ -110,7 +105,6 @@ def generate_docs(
                     file_lang = 'rust'
 
             # If still no language determined (e.g. unknown extension), skip or default?
-            # Original code had no fallback else block in the snippet I read, but let's assume if it fails it might error or return empty.
             if not file_lang:
                  continue
 
@@ -118,6 +112,9 @@ def generate_docs(
             
             # Generate documentation
             doc_strings = generator.generate_documentation(functions, file_lang)
+            
+            # Combine into a single string for this file if results are expected as Dict[str, str]
+            file_doc_combined = "\n\n".join(doc_strings.values())
             
             if inplace:
                 # Modify file in place
@@ -127,7 +124,7 @@ def generate_docs(
                 output_path = Path(output_dir) / Path(file_path).name
                 generator.write_documentation_to_file(output_path, doc_strings)
             
-            results[str(file_path)] = doc_strings
+            results[str(file_path)] = file_doc_combined
             
         except Exception as e:
             print(f"Error processing {file_path}: {e}")

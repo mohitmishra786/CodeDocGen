@@ -7,11 +7,11 @@ to generate context-aware, intelligent function descriptions.
 
 import re
 import ast
-import nltk
+import nltk  # type: ignore
 from typing import List, Dict, Optional, Tuple
-from nltk.tokenize import word_tokenize
-from nltk.corpus import wordnet
-from nltk import pos_tag
+from nltk.tokenize import word_tokenize  # type: ignore
+from nltk.corpus import wordnet  # type: ignore
+from nltk import pos_tag  # type: ignore
 from .models import Function, Parameter, FunctionBody, FunctionException
 from .config import Config
 from .ast_analyzer import ASTAnalyzer
@@ -19,7 +19,7 @@ from .ai_analyzer import AIAnalyzer
 import logging
 
 try:
-    import spacy
+    import spacy  # type: ignore
     SPACY_AVAILABLE = True
 except ImportError:
     SPACY_AVAILABLE = False
@@ -575,6 +575,8 @@ class IntelligentAnalyzer:
                 return "Cleans up resources and terminates."
             else:
                 return f"Processes {word} operations."
+        
+        return f"Handles {name} operations."
     
     def _fill_template(self, template: str, function: Function) -> str:
         """
@@ -855,6 +857,8 @@ class IntelligentAnalyzer:
             # Fallback to type-based description
             type_desc = self._get_type_description(parameter.type)
             return f"The {parameter.name} {type_desc}."
+            
+        return f"The {parameter.name} parameter."
     
     def _get_type_description(self, type_name: str) -> str:
         """
