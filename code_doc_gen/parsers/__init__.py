@@ -91,6 +91,12 @@ class ParserFactory:
             self._parsers['javascript'] = JavaScriptParser(self.config)
         except ImportError:
             print("Warning: JavaScript parser not available")
+
+        try:
+            from .typescript_parser import TypeScriptParser
+            self._parsers['typescript'] = TypeScriptParser(self.config)
+        except ImportError:
+            print("Warning: TypeScript parser not available")
     
     def get_parser(self, language: str) -> BaseParser:
         """
