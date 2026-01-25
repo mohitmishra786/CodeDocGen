@@ -1,4 +1,4 @@
-## CodeDocGen on Linux — Step-by-step Guide
+## CodeDocGen on Linux -- Step-by-step Guide
 
 This guide helps you install and use CodeDocGen on Ubuntu/Debian/Fedora/Arch-like systems.
 
@@ -34,7 +34,7 @@ pip install -i https://test.pypi.org/simple/ code_doc_gen==1.1.7
 ```
 
 ### 5) Install libclang for C/C++ support
-Install your distro’s LLVM/Clang packages. Examples:
+Install your distro's LLVM/Clang packages. Examples:
 
 - Ubuntu/Debian:
 ```bash
@@ -131,5 +131,5 @@ pip install -U -i https://test.pypi.org/simple/ code_doc_gen==1.1.7
 pip uninstall code_doc_gen
 ```
 
-You’re ready to generate documentation on Linux!
+You're ready to generate documentation on Linux!
 
