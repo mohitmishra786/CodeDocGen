@@ -253,6 +253,13 @@ Examples:
         help='Securely store an API key for a provider (interactive prompt). Usage: --set-key [groq|openai|anthropic|mistral]'
     )
     
+    # Wizard
+    parser.add_argument(
+        '--wizard',
+        action='store_true',
+        help='Run interactive setup wizard'
+    )
+    
     parser.add_argument(
         '--version',
         action='version',
@@ -262,6 +269,13 @@ Examples:
     args = parser.parse_args()
     
     try:
+        # Handle wizard
+        if args.wizard:
+            from .wizard import SetupWizard
+            wizard = SetupWizard()
+            wizard.run()
+            return 0
+
         # Handle credential management first
         if args.set_key:
             from .credential_manager import CredentialManager
