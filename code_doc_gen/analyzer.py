@@ -18,6 +18,11 @@ from .ast_analyzer import ASTAnalyzer
 from .ai_analyzer import AIAnalyzer
 import logging
 
+try:
+    import spacy
+    SPACY_AVAILABLE = True
+except ImportError:
+    SPACY_AVAILABLE = False
 
 class IntelligentAnalyzer:
     """Intelligent analyzer that uses AI, NLTK, and regex-based analysis."""
@@ -34,6 +39,17 @@ class IntelligentAnalyzer:
         
         # Ensure NLTK resources are available
         self._ensure_nltk_resources()
+        
+        # Initialize SpaCy if enabled and available
+        self.nlp = None
+        if config.get_nltk_config().get('enable_spacy', False) and SPACY_AVAILABLE:
+            try:
+                self.nlp = spacy.load("en_core_web_sm")
+                self.logger.info("SpaCy initialized successfully")
+            except OSError:
+                self.logger.warning("SpaCy model 'en_core_web_sm' not found. Please run 'python -m spacy download en_core_web_sm' to enable enhanced analysis.")
+            except Exception:
+                self.logger.exception("Failed to load SpaCy model")
         
         # Patterns for function name analysis
         self.camel_case_pattern = re.compile(r'([A-Z][a-z0-9]+)')
@@ -229,6 +245,24 @@ class IntelligentAnalyzer:
         words = re.split(r'_|(?=[A-Z])', name)
         if not words:
             return "processes", "data"
+        
+        # Clean words (remove empty strings)
+        words = [w.lower() for w in words if w]
+        sentence = " ".join(words)
+        
+        # Use SpaCy if available
+        if self.nlp:
+            try:
+                doc = self.nlp(sentence)
+                verbs = [token.text for token in doc if token.pos_ == "VERB"]
+                nouns = [token.text for token in doc if token.pos_ == "NOUN"]
+                
+                verb = verbs[0] if verbs else (words[0] if words else "processes")
+                obj = " ".join(nouns) if nouns else (" ".join(words[1:]) if len(words) > 1 else "data")
+            except Exception:
+                self.logger.debug(f"SpaCy analysis failed for {name}")
+            else:
+                return verb, obj
         
         try:
             # Use NLTK for POS tagging
@@ -855,7 +889,7 @@ class IntelligentAnalyzer:
         
         return type_mapping.get(type_name.lower(), f"value of type {type_name}")
     
-    def analyze_exception(self, exception: Exception) -> None:
+    def analyze_exception(self, exception: FunctionException) -> None:
         """
         Analyze an exception and generate description.
         
@@ -865,7 +899,7 @@ class IntelligentAnalyzer:
         if not exception.description:
             exception.description = self._generate_exception_description(exception)
     
-    def _generate_exception_description(self, exception: Exception) -> str:
+    def _generate_exception_description(self, exception: FunctionException) -> str:
         """
         Generate a description for an exception.
         

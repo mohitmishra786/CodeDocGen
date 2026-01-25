@@ -63,7 +63,7 @@ class ParserFactory:
             config: Configuration object
         """
         self.config = config
-        self._parsers = {}
+        self._parsers: Dict[str, BaseParser] = {}
         self._load_parsers()
     
     def _load_parsers(self) -> None:
@@ -91,6 +91,24 @@ class ParserFactory:
             self._parsers['javascript'] = JavaScriptParser(self.config)
         except ImportError:
             print("Warning: JavaScript parser not available")
+
+        try:
+            from .typescript_parser import TypeScriptParser
+            self._parsers['typescript'] = TypeScriptParser(self.config)
+        except ImportError:
+            print("Warning: TypeScript parser not available")
+
+        try:
+            from .go_parser import GoParser
+            self._parsers['go'] = GoParser(self.config)
+        except ImportError:
+            print("Warning: Go parser not available")
+
+        try:
+            from .rust_parser import RustParser
+            self._parsers['rust'] = RustParser(self.config)
+        except ImportError:
+            print("Warning: Rust parser not available")
     
     def get_parser(self, language: str) -> BaseParser:
         """

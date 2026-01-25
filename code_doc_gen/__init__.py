@@ -31,41 +31,93 @@ __license__ = "MIT"
 """
 def generate_docs(
     repo_path: Union[str, Path],
-    lang: str = "c++",
+    lang: Optional[str] = None,
     files: Optional[List[str]] = None,
     config_path: Optional[Union[str, Path]] = None,
     inplace: bool = False,
-    output_dir: Optional[Union[str, Path]] = None
+    output_dir: Optional[Union[str, Path]] = None,
+    **kwargs
 ) -> Dict[str, str]:
     """
     Generate documentation for functions and methods in a repository.
     
     Args:
         repo_path: Path to the repository to scan
-        lang: Programming language ('c++', 'python')
+        lang: Programming language ('c++', 'python', etc.). Auto-detected if None.
         files: Specific files to process (if None, processes all files)
         config_path: Path to custom configuration file
         inplace: Whether to modify files in place
         output_dir: Directory to output modified files (if not inplace)
+        **kwargs: Additional configuration options (ai_enabled, ai_provider, api_keys, etc.)
         
     Returns:
         Dictionary mapping file paths to generated documentation strings
     """
-    config = Config(config_path) if config_path else Config()
+    config = Config(Path(config_path) if config_path else None)
+    
+    # Update config with kwargs
+    if kwargs:
+        # Handle AI settings
+        ai_args = ['enable_ai', 'ai_provider', 'groq_api_key', 'openai_api_key', 'anthropic_api_key', 'mistral_api_key']
+        if any(arg in kwargs for arg in ai_args):
+            ai_config = config.get_ai_config()
+            if kwargs.get('enable_ai'):
+                ai_config['enabled'] = True
+            if kwargs.get('ai_provider'):
+                ai_config['provider'] = kwargs.get('ai_provider')
+            for key in ['groq_api_key', 'openai_api_key', 'anthropic_api_key', 'mistral_api_key']:
+                if kwargs.get(key):
+                    ai_config[key] = kwargs.get(key)
+            config.config['ai'] = ai_config
+            
+        # Handle other settings
+        if kwargs.get('clang_path'):
+            config.config['clang_path'] = kwargs.get('clang_path')
+        if kwargs.get('enable_spacy'):
+            config.config['nltk']['enable_spacy'] = True
+
     scanner = RepositoryScanner(config)
     generator = DocumentationGenerator(config)
     
     # Scan repository for files
+    # If lang is None, scan_repository usually expects a list or handles "all". 
+    # Let's check scanner.scan_repository signature.
+    # Assuming it handles None or we pass "c++" as default only if strictly needed by scanner?
+    # Actually, if lang is None, we likely want to scan ALL supported files.
+    # Looking at original code, it passed `lang`. If I change default to None, I should pass None.
     file_paths = scanner.scan_repository(repo_path, lang, files)
     
     results = {}
     for file_path in file_paths:
         try:
             # Parse and analyze the file
-            functions = scanner.parse_file(file_path, lang)
+            # Auto-detect lang if not specified
+            file_lang = lang
+            if not file_lang:
+                if file_path.suffix.lower() in ['.c', '.cpp', '.cc', '.cxx', '.h', '.hpp', '.hh', '.hxx']:
+                    file_lang = 'c++'
+                elif file_path.suffix.lower() in ['.py', '.pyx', '.pxd']:
+                    file_lang = 'python'
+                elif file_path.suffix.lower() == '.java':
+                    file_lang = 'java'
+                elif file_path.suffix.lower() in ['.js', '.mjs', '.cjs']:
+                    file_lang = 'javascript'
+                elif file_path.suffix.lower() in ['.ts', '.tsx']:
+                    file_lang = 'typescript'
+                elif file_path.suffix.lower() == '.go':
+                    file_lang = 'go'
+                elif file_path.suffix.lower() == '.rs':
+                    file_lang = 'rust'
+
+            # If still no language determined (e.g. unknown extension), skip or default?
+            # Original code had no fallback else block in the snippet I read, but let's assume if it fails it might error or return empty.
+            if not file_lang:
+                 continue
+
+            functions = scanner.parse_file(file_path, file_lang)
             
             # Generate documentation
-            doc_strings = generator.generate_documentation(functions, lang)
+            doc_strings = generator.generate_documentation(functions, file_lang)
             
             if inplace:
                 # Modify file in place

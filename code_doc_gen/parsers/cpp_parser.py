@@ -122,8 +122,26 @@ class CppParser(BaseParser):
             if _try_set_and_probe("path", env_library_path):
                 return
 
-        # 2) Config file overrides
+        # 2) Config file overrides (and CLI override via Config object)
         cpp_cfg = config.config.get("cpp", {}).get("libclang", {})
+        # Check if clang_path was set directly in top-level config (from CLI)
+        cli_clang_path = config.config.get("clang_path")
+        
+        # CLI/Config priority: 
+        # 1. CLI --clang-path (in config['clang_path'])
+        # 2. config.yaml cpp.libclang.library_file
+        # 3. config.yaml cpp.libclang.library_path
+        
+        if cli_clang_path and Path(cli_clang_path).exists():
+            # Determine if it's a file or dir
+            p = Path(cli_clang_path)
+            if p.is_file():
+                if _try_set_and_probe("file", cli_clang_path):
+                    return
+            elif p.is_dir():
+                if _try_set_and_probe("path", cli_clang_path):
+                    return
+
         cfg_library_file: Optional[str] = cpp_cfg.get("library_file")
         cfg_library_path: Optional[str] = cpp_cfg.get("library_path")
 
@@ -169,8 +187,8 @@ class CppParser(BaseParser):
                                 return
                         if _try_set_and_probe("path", native_dir2):
                             return
-                except Exception:
-            pass
+        except Exception as e:
+            logging.getLogger(__name__).debug(f"PyPI libclang package probe failed: {e}")
 
         # 4) ctypes-based search for common library names
         for name in ("clang", "libclang"):
@@ -181,8 +199,8 @@ class CppParser(BaseParser):
                     # Otherwise, fall back to set_library_file with the returned value
                     if _try_set_and_probe("file", found):
                         return
-                    except Exception:
-                pass
+            except Exception as e:
+                logging.getLogger(__name__).debug(f"ctypes library search failed for {name}: {e}")
 
         # 5) OS-specific common locations
         system_name = platform.system().lower()

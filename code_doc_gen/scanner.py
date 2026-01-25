@@ -11,6 +11,12 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from multiprocessing import Pool, cpu_count
 
+try:
+    from tqdm import tqdm
+    TQDM_AVAILABLE = True
+except ImportError:
+    TQDM_AVAILABLE = False
+
 from .parsers import ParserFactory
 from .analyzer import IntelligentAnalyzer
 from .models import Function, ParsedFile
@@ -78,7 +84,7 @@ class RepositoryScanner:
             
             # Get all supported file extensions
             all_extensions = []
-            for lang_name in ['c++', 'python', 'java', 'javascript']:
+            for lang_name in ['c++', 'python', 'java', 'javascript', 'typescript', 'go', 'rust']:
                 all_extensions.extend(self.config.get_file_extensions(lang_name))
             
             # Get changed files and filter to source files
@@ -240,7 +246,15 @@ class RepositoryScanner:
         
         # Use multiprocessing to parse files in parallel
         with Pool(processes=max_workers) as pool:
-            results = pool.starmap(self._parse_file_worker, args)
+            if TQDM_AVAILABLE:
+                results = list(tqdm(
+                    pool.starmap(self._parse_file_worker, args), 
+                    total=len(args), 
+                    desc="Parsing files", 
+                    unit="file"
+                ))
+            else:
+                results = pool.starmap(self._parse_file_worker, args)
         
         # Combine results
         file_functions = {}
@@ -307,7 +321,11 @@ class RepositoryScanner:
             return self.parse_files_parallel(file_paths, lang)
         else:
             file_functions = {}
-            for file_path in file_paths:
+            iterator = file_paths
+            if TQDM_AVAILABLE:
+                iterator = tqdm(file_paths, desc="Parsing files", unit="file")
+                
+            for file_path in iterator:
                 functions = self.parse_file(file_path, lang)
                 file_functions[file_path] = functions
             return file_functions
@@ -353,5 +371,11 @@ class RepositoryScanner:
             return 'java'
         elif suffix in ['.js', '.mjs', '.cjs']:
             return 'javascript'
+        elif suffix in ['.ts', '.tsx']:
+            return 'typescript'
+        elif suffix == '.go':
+            return 'go'
+        elif suffix == '.rs':
+            return 'rust'
         else:
-            return 'python'  # Default fallback 
+            return 'python'  # Default fallback
